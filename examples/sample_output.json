@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "title": "机械鹿神殿短片",
+    "duration_seconds": 14.8,
+    "aspect_ratio": "9:16",
+    "estimated_shot_count": 4,
+    "pace": "mixed",
+    "primary_format": "ad"
+  },
+  "summary": {
+    "one_sentence": "这条视频通过超现实主体显现、连续升级的镜头推进和统一氛围特效，制造强停留与高级感。",
+    "core_appeal": "超现实视觉钩子 + 持续升级 + 高统一度氛围",
+    "likely_intent": "用高质感奇观视觉制造停留和记忆点"
+  },
+  "timeline": [
+    {
+      "start": 0.0,
+      "end": 2.0,
+      "visual_event": "黑暗中机械鹿轮廓逐渐显现",
+      "subject_action": "鹿缓缓抬头",
+      "camera_action": "轻微推进",
+      "audio_event": "低频环境音铺底",
+      "narrative_function": "hook",
+      "attention_level": 9
+    }
+  ],
+  "visual_language": {
+    "style_keywords": ["赛博奇幻", "神殿感", "高反差"],
+    "palette": ["冷蓝", "金属灰", "微弱金光"],
+    "lighting": ["逆光", "边缘光", "低照度高对比"],
+    "texture_fx": ["雾气", "粒子", "镜头污染"],
+    "environment_traits": ["封闭神殿空间", "潮湿空气"],
+    "subject_design_traits": ["机械生物", "高辨识轮廓"]
+  },
+  "rhythm_structure": {
+    "hook_window": "0-2s",
+    "peak_moments": [
+      {
+        "time": 1.2,
+        "reason": "主体显现完成，识别度骤升"
+      }
+    ],
+    "pattern": "由静到动，再逐步升级空间感",
+    "intensity_curve": "压抑 -> 显现 -> 升级 -> 收束"
+  },
+  "camera_language": {
+    "shot_types": ["近景", "特写", "低角度"],
+    "movement_patterns": ["缓推", "贴近", "微抬升"],
+    "framing_traits": ["主体中心构图", "压暗背景突出主体"],
+    "continuity_strategy": "通过连续推进保持沉浸感"
+  },
+  "emotion_and_psychology": {
+    "dominant_emotion": "敬畏",
+    "emotion_curve": "神秘 -> 压迫 -> 惊艳",
+    "viewer_pull_factors": ["未知生物", "低可见度显现", "空间展开"],
+    "why_it_feels_premium": ["统一光影", "雾气与粒子维持氛围", "镜头节奏克制"]
+  },
+  "viral_mechanics": {
+    "hook_type": "超现实视觉反差",
+    "retention_drivers": ["主体持续升级", "镜头推进", "氛围细节密度"],
+    "shareability_drivers": ["世界观强", "画面奇观感明显"],
+    "repeat_watch_drivers": ["细节多", "显现过程值得回看"]
+  },
+  "transferable_pattern": {
+    "must_keep": ["前2秒主体识别", "统一氛围特效", "单主体连续升级"],
+    "replaceable": ["主体身份", "场景类型", "材质风格"],
+    "do_not_copy_literally": ["机械鹿", "神殿造型细节"],
+    "abstract_pattern": "用低可见度环境中的强辨识主体显现做钩子，再通过连续镜头推进和空间升级制造沉浸与震撼。"
+  },
+  "seedance_translation": {
+    "recommended_mode": "first_frame_plus_text",
+    "why": "主体一致性和氛围统一度要求较高，适合先锁首帧再用时间戳提示词扩展。",
+    "seedance_ready_prompt_template": "15秒，低照度神秘氛围，0-2秒主体从黑暗中显现，2-6秒镜头缓推贴近主体细节，6-10秒空间层次展开，10-15秒以低角度收束主体威压感。光影：逆光、边缘光、雾气、粒子。禁止文字水印。",
+    "shot_plan_needed": true,
+    "reference_asset_suggestion": ["首帧图", "主体设定图", "氛围参考视频"],
+    "risk_points": ["纯文本易主体漂移", "复杂空间展开可能失控"]
+  },
+  "next_step_assets": {
+    "script_needed": true,
+    "storyboard_needed": true,
+    "first_frame_prompt_needed": true,
+    "variants": [
+      {
+        "name": "东方妖狐版",
+        "direction": "东方奇幻",
+        "what_changes": ["机械鹿改为妖狐", "神殿改为古墓"],
+        "what_stays": ["显现式hook", "统一雾气氛围", "连续推进"]
+      }
+    ]
+  }
+}
