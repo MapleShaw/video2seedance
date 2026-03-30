@@ -12,7 +12,7 @@ from utils import extract_first_json_block
 from formatter import render_markdown_stub
 
 
-def run_gemini(video_path, prompt):
+def run_gemini(video_path, prompt, model="gemini-2.0-flash"):
     """
     使用 google-genai SDK 上传视频并分析。
     需要设置环境变量 GEMINI_API_KEY。
@@ -36,9 +36,9 @@ def run_gemini(video_path, prompt):
     if video_file.state.name == "FAILED":
         raise RuntimeError(f"视频处理失败: {video_file.state.name}")
 
-    print("视频处理完成，开始分析...")
+    print(f"视频处理完成，开始分析（模型: {model}）...")
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model=model,
         contents=[
             types.Part.from_uri(file_uri=video_file.uri, mime_type=video_file.mime_type),
             prompt,
@@ -73,6 +73,7 @@ def main():
     parser.add_argument("--focus", default="hook,rhythm,visual_style,seedance_translation")
     parser.add_argument("--variant-direction", default="保留核心机制，但允许换角色、换题材、换世界观")
     parser.add_argument("--output-dir", default="./output")
+    parser.add_argument("--model", default="gemini-2.0-flash")
 
     args = parser.parse_args()
 
@@ -85,7 +86,7 @@ def main():
     )
 
     full_prompt = SYSTEM_PROMPT + "\n\n" + user_prompt
-    raw_text = run_gemini(args.video, full_prompt)
+    raw_text = run_gemini(args.video, full_prompt, model=args.model)
 
     data, report_md = extract_first_json_block(raw_text)
     if not report_md:
