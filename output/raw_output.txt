@@ -1,0 +1,132 @@
+```json
+{
+  "meta": {
+    "title": "暗黑东方奇幻视觉流：鬼魅行者",
+    "duration_seconds": 63,
+    "aspect_ratio": "9:16",
+    "estimated_shot_count": 35,
+    "pace": "fast",
+    "primary_format": "music-visual"
+  },
+  "summary": {
+    "one_sentence": "通过高频切换的暗黑东方奇幻意象与节奏感极强的电子音乐，构建极具沉浸感的叙事碎片。",
+    "core_appeal": "极致的视觉冲击力（视觉奇观）与暗黑哥特风东方审美的解构融合。",
+    "likely_intent": "作为高质量视觉样本，展示 AI 视频生成在复杂光影、宏大生物设计及角色服饰表现上的能力。"
+  },
+  "timeline": [
+    {
+      "start": 0,
+      "end": 2,
+      "visual_event": "古风少女执红伞对视巨型枯骨巨兽",
+      "subject_action": "静止对峙",
+      "camera_action": "缓慢推近",
+      "audio_event": "低沉鼓点开启",
+      "narrative_function": "hook",
+      "attention_level": 5
+    },
+    {
+      "start": 2,
+      "end": 60,
+      "visual_event": "多场景切换：送葬队伍、魔兽咆哮、飞天神禽、法术符咒",
+      "subject_action": "持续变动与冲突",
+      "camera_action": "快剪、摇移",
+      "audio_event": "节奏爆发",
+      "narrative_function": "build",
+      "attention_level": 4
+    }
+  ],
+  "visual_language": {
+    "style_keywords": ["Dark Fantasy", "Oriental Gothic", "Cinematic Lighting", "Hyper-detailed"],
+    "palette": ["Crimson Red", "Obsidian Black", "Pale Fog Grey", "Ember Orange"],
+    "lighting": ["High contrast", "Rim lighting", "Volumetric fog", "Bioluminescence"],
+    "texture_fx": ["Blood stains", "Ancient paper/scrolls", "Weathered bone", "Flowing silk"],
+    "environment_traits": ["Misty bamboo forest", "Desolate mountain", "Ruined temples"],
+    "subject_design_traits": ["Exquisite traditional costume", "Demonic horns", "Weapon-bound", "Ethereal makeup"]
+  },
+  "rhythm_structure": {
+    "hook_window": "前2秒",
+    "peak_moments": [
+      {
+        "time": 28,
+        "reason": "特写少女满面鲜血与利剑的强对比"
+      },
+      {
+        "time": 58,
+        "reason": "法术动作释放，符咒化灰，完成叙事高潮"
+      }
+    ],
+    "pattern": "每2-3秒一次剪辑循环，符合BPM节奏",
+    "intensity_curve": "平缓-爆发-持续高位波动"
+  },
+  "camera_language": {
+    "shot_types": ["Extreme close-up", "Wide establishing shot", "Low angle", "Over-the-shoulder"],
+    "movement_patterns": ["Static, Slow tracking, Zoom-in"],
+    "framing_traits": ["Rule of thirds centered", "Negative space in fog"],
+    "continuity_strategy": "视觉逻辑（色彩与元素关联）优于剧情逻辑"
+  },
+  "emotion_and_psychology": {
+    "dominant_emotion": "压抑的恐惧与崇高美感",
+    "emotion_curve": "紧张-猎奇-震撼",
+    "viewer_pull_factors": ["Uncanny valley aesthetics", "Scale contrast", "Forbidden mystery"],
+    "why_it_feels_premium": ["极高的光影一致性", "构图的留白感", "高饱和色彩的点缀策略"]
+  },
+  "viral_mechanics": {
+    "hook_type": "视觉奇观与叙事留白",
+    "retention_drivers": ["不断变化的怪诞生物", "高颜值主角的角色设计"],
+    "shareability_drivers": ["Wallpaper-worthy aesthetic", "Trend-driven subculture"],
+    "repeat_watch_drivers": ["寻找画面细节与彩蛋"]
+  },
+  "transferable_pattern": {
+    "must_keep": ["红黑对比配色", "巨型生物与渺小人类的尺度对比", "强节奏的视觉切换"],
+    "replaceable": ["角色（人设）、场景（东方改为西方/赛博）、怪兽种类"],
+    "do_not_copy_literally": ["单一的中国古代背景"],
+    "abstract_pattern": "巨物恐怖 + 极简人物主体 + 节奏型快剪"
+  },
+  "seedance_translation": {
+    "recommended_mode": "multi-stage",
+    "why": "视频包含大量复杂角色与巨型生物交互，单一生成无法保证一致性与细节。",
+    "seedance_ready_prompt_template": "[Subject] stands in [Environment], [Action/Pose], high detail, [Lighting Style], [Color Palette], cinematographic, 8k, photorealistic",
+    "shot_plan_needed": true,
+    "reference_asset_suggestion": ["巨型骨骼模型素材", "红黑风格的材质贴图"],
+    "risk_points": ["手部姿态在快剪下的不稳定性", "生物模型与角色比例失调"]
+  },
+  "next_step_assets": {
+    "script_needed": true,
+    "storyboard_needed": true,
+    "first_frame_prompt_needed": true,
+    "variants": [
+      {
+        "name": "Cyber-Gothic",
+        "direction": "科技与废土结合",
+        "what_changes": ["古装换机甲", "竹林换废弃金属城市"],
+        "what_stays": ["红黑配色", "巨型生物结构"]
+      }
+    ]
+  }
+}
+```
+
+---
+
+### Markdown 报告：视觉逻辑深度分析
+
+#### 1. 前2秒的 Hook 机制分析
+视频开篇通过**“尺度对比+极简静止+高对比色彩”**完成 Hook。
+*   **尺度对比**：极致渺小的人类（身着素服）对标极致庞大的枯骨巨兽。这种生物本能的“巨物恐惧”瞬间锁定注意力。
+*   **视觉留白**：画面背景被浓雾包裹，缺乏具体信息，强制观众去关注角色与怪兽的关系，制造“悬疑感”。
+*   **色彩导向**：画面大面积阴暗，红伞成为全图唯一高饱和度视觉重心，符合人类视觉生理导向。
+
+#### 2. 可迁移生成骨架
+该视频的成功逻辑不在于“剧情”，而在于**“情绪化的视觉拼贴”**。
+*   **底层生成逻辑**：`[单一视觉焦点] + [压迫感巨物] + [风格化氛围（迷雾/雨/火）]`。
+*   **节奏骨架**：视频采用极强的节拍制剪辑，每一拍（约2.5s）变换视角或环境。在 Seedance 生成中，应遵循“固定角色外貌 + 变动场景组合”的模式。
+
+#### 3. Seedance 生成策略建议
+*   **适合纯生成的内容**：背景氛围（迷雾、火光、森林）、巨兽的远景、动态效果（符咒破碎、飘落的碎片）。
+*   **依赖首帧图/多段生成的内容**：主角的固定人设（面部一致性）、动作序列（特别是战斗动作）、武器形态。
+*   **核心痛点规避**：不要尝试在 60 秒内通过 AI 一次性生成所有角色。建议先生成 5-10 个 3 秒钟的“视觉奇观片段”，通过剪辑软件进行节奏对齐，而非依赖视频 AI 生成全片叙事。
+
+#### 4. 对 Agent 的指导建议
+*   **Prompt Agent**：需重点描述光影对比（e.g., *rim lighting, embers, volumetric fog*）。
+*   **分镜 Agent**：必须包含一个“定场大远景”以确立空间感，随后是“紧凑特写”以交代情绪。
+*   **总结**：如果换题材（如赛博版），只需保留“渺小人类面对巨大压迫”的构图逻辑，更换环境贴图（霓虹灯代替灯笼，机械结构代替骨架）即可完成无损迁移。
