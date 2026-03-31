@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "source_title": "暗黑东方奇幻视觉流：鬼魅行者",
+    "total_duration_seconds": 63,
+    "aspect_ratio": "9:16",
+    "seedance_skill_detected": true,
+    "recommended_mode": "multi-stage",
+    "abstract_pattern": "巨物恐怖 + 极简人物主体 + 节奏型快剪",
+    "risk_points": [
+      "手部姿态在快剪下的不稳定性",
+      "生物模型与角色比例失调"
+    ],
+    "shot_count": 2
+  },
+  "shots": [
+    {
+      "index": 1,
+      "time_range": "0s-2s",
+      "duration_seconds": 2,
+      "narrative_function": "hook",
+      "attention_level": 5,
+      "prompt": "2秒，UE5渲染，电影级VFX，8K超清，Dark Fantasy、Oriental Gothic、Cinematic Lighting、Hyper-detailed风格，Crimson Red+Obsidian Black+Pale Fog Grey色调，High contrast+Rim lighting光影，\n全片统一的体积雾弥散效果，高饱和点缀色彩策略，\n0-2秒：古风少女执红伞对视巨型枯骨巨兽，静止对峙，缓慢推近 + Static, Slow tracking, Zoom-in，Misty bamboo forest、Desolate mountain背景，Exquisite traditional costume，Demonic horns，Blood stains，Ancient paper/scrolls，前2秒静止对峙制造张力，镜头缓慢推近；\n光影：高对比逆光+体积雾弥散（光源层），雾气柔化高光同时强化阴影对比（光行为层），Crimson Red，Obsidian Black，Pale Fog Grey（色调层）。\n禁止：任何文字、字幕、LOGO或水印",
+      "asset_hints": [
+        "建议准备首帧参考图（@图片1）以锁定角色外貌",
+        "角色需要：Exquisite traditional costume、Demonic horns"
+      ]
+    },
+    {
+      "index": 2,
+      "time_range": "2s-60s",
+      "duration_seconds": 58,
+      "narrative_function": "build",
+      "attention_level": 4,
+      "prompt": "15秒，Dark Fantasy、Oriental Gothic、Cinematic Lighting、Hyper-detailed风格，Crimson Red+Obsidian Black+Pale Fog Grey色调，High contrast+Rim lighting光影，\n0-15秒：多场景切换：送葬队伍、魔兽咆哮、飞天神禽、法术符咒，持续变动与冲突，快剪、摇移 + Static, Slow tracking, Zoom-in，Misty bamboo forest、Desolate mountain，Blood stains、Ancient paper/scrolls，体积雾弥散，High contrast，Rim lighting；\n禁止：任何文字、字幕、LOGO或水印",
+      "asset_hints": [
+        "建议准备首帧参考图（@图片1）以锁定角色外貌",
+        "角色需要：Exquisite traditional costume、Demonic horns",
+        "⚠️ 本段时长58s，超出单次生成上限15s，建议拆为4段"
+      ]
+    }
+  ],
+  "variants": [
+    {
+      "name": "Cyber-Gothic",
+      "direction": "科技与废土结合",
+      "what_changes": [
+        "古装换机甲",
+        "竹林换废弃金属城市"
+      ],
+      "what_stays": [
+        "红黑配色",
+        "巨型生物结构"
+      ],
+      "note": "沿用「红黑配色、巨型生物结构」，替换「古装换机甲、竹林换废弃金属城市」"
+    }
+  ],
+  "workflow_note": "生成顺序建议：① 准备首帧参考图（用于 hook 段） → ② 按 shots 列表逐条在即梦生成 3-5s 片段 → ③ 按 rhythm_structure.pattern 节奏卡点剪辑拼接"
+}

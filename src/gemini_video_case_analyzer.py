@@ -10,6 +10,7 @@ from google.genai import types
 from prompts import SYSTEM_PROMPT, build_user_prompt
 from utils import extract_first_json_block
 from formatter import render_markdown_stub
+from shot_prompt_generator import generate_shot_prompts, render_shot_prompts_md
 
 
 def run_gemini(video_path, prompt, model="gemini-2.0-flash"):
@@ -62,6 +63,24 @@ def save_outputs(output_dir: Path, data: dict, report_md: str, raw_text: str):
     )
     (output_dir / "analysis.md").write_text(report_md, encoding="utf-8")
     (output_dir / "raw_output.txt").write_text(raw_text, encoding="utf-8")
+
+    # 自动生成 Seedance 分镜提示词
+    print("正在生成 Seedance 分镜提示词...")
+    try:
+        shot_prompts = generate_shot_prompts(data)
+        (output_dir / "shot_prompts.json").write_text(
+            json.dumps(shot_prompts, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        (output_dir / "shot_prompts.md").write_text(
+            render_shot_prompts_md(shot_prompts),
+            encoding="utf-8",
+        )
+        shot_count = shot_prompts["metadata"]["shot_count"]
+        skill_used = shot_prompts["metadata"]["seedance_skill_detected"]
+        print(f"✅ 分镜提示词已生成：{shot_count} 个镜头，Seedance skill: {'已使用' if skill_used else '未检测到，用内置规则'}")
+    except Exception as e:
+        print(f"⚠️  分镜提示词生成失败（不影响主分析输出）：{e}")
 
 
 def main():

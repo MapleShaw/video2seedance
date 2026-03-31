@@ -155,6 +155,13 @@ def build_user_prompt(goal, target_platform, output_depth, focus, variant_direct
 4. 哪些内容必须依赖首帧图 / 参考视频 / 多段生成
 5. 最终给出可供后续 Agent 使用的结构化结果
 
+⚠️ timeline 字段的填写要求（非常重要）：
+- 必须逐场景/逐镜头打点，每个视觉事件单独一条
+- 每条时间跨度不超过 5 秒（除非是明确的长镜头）
+- 目标是 10-20 条（取决于视频节奏），绝不能只有 2-3 条
+- 每条必须完整填写：start/end/visual_event/subject_action/camera_action/audio_event/narrative_function/attention_level
+- attention_level 按 1-5 打分（5=最抓眼球，如 hook 和高潮）
+
 {JSON_SCHEMA_HINT}
 
 在 JSON 之后，再输出一份 Markdown 报告。
