@@ -1,17 +1,24 @@
 """
 shot_prompt_generator.py
 
-从 analysis.json 自动生成 Seedance 2.0 分镜提示词。
-如果检测到本地 Seedance skill，按其规范生成；否则使用内置规则。
+从 analysis.json + Seedance SKILL.md 生成高质量分镜提示词。
+通过 LLM（默认走 ZenMux OpenAI 兼容接口）理解分析结果和 skill 规范后智能生成，
+不再做死模板拼接。
+
+环境变量:
+  ZENMUX_API_KEY  - ZenMux API Key（必需）
+  ZENMUX_BASE_URL - ZenMux base URL（可选，默认 https://zenmux.ai/api/v1）
+  SEEDANCE_MODEL  - 模型名（可选，默认 anthropic/claude-sonnet-4.6）
 """
 
 import json
 import os
-import textwrap
+import sys
 from pathlib import Path
+from textwrap import dedent
 
 
-# ─── Seedance Skill 检测 ────────────────────────────────────────────────────
+# ─── Seedance Skill 检测 & 读取 ─────────────────────────────────────────────
 
 SKILL_SEARCH_PATHS = [
     Path.home() / ".openclaw/workspace/skills/seedance-prompt/SKILL.md",
@@ -19,270 +26,245 @@ SKILL_SEARCH_PATHS = [
 ]
 
 
-def detect_seedance_skill() -> bool:
+def load_seedance_skill() -> str | None:
+    """尝试加载 SKILL.md 内容。找到返回文本，找不到返回 None。"""
     for p in SKILL_SEARCH_PATHS:
         if p.exists():
-            print(f"[shot_prompt_generator] 检测到 Seedance skill: {p}")
-            return True
-    print("[shot_prompt_generator] 未检测到 Seedance skill，使用内置规则")
-    return False
+            print(f"[shot_prompt_generator] ✅ 检测到 Seedance skill: {p}")
+            return p.read_text(encoding="utf-8")
+    # 也检查项目自带的 SKILL.md
+    local_skill = Path(__file__).parent.parent / "SKILL.md"
+    if local_skill.exists():
+        print(f"[shot_prompt_generator] ✅ 检测到项目内 SKILL.md: {local_skill}")
+        return local_skill.read_text(encoding="utf-8")
+    print("[shot_prompt_generator] ⚠️ 未检测到 Seedance SKILL.md，LLM 将使用内置知识生成")
+    return None
 
 
-# ─── 辅助工具 ───────────────────────────────────────────────────────────────
+# ─── LLM 调用 ───────────────────────────────────────────────────────────────
 
-def _join(items, sep="、"):
-    if not items:
-        return ""
-    return sep.join(items)
+DEFAULT_BASE_URL = "https://zenmux.ai/api/v1"
+DEFAULT_MODEL = "anthropic/claude-sonnet-4.6"
 
 
-def _camera_cn(shot_types, movement_patterns):
-    """把英文镜头类型 + 运动转成中文友好描述"""
-    mapping = {
-        "extreme close-up": "极端特写",
-        "close-up": "特写",
-        "medium shot": "中景",
-        "wide shot": "宽景",
-        "wide establishing shot": "定场宽景",
-        "low angle": "低角度仰拍",
-        "high angle": "俯拍",
-        "over-the-shoulder": "过肩镜头",
-        "aerial": "航拍",
-        "pov": "主观视角",
-        "static": "静止镜头",
-        "slow tracking": "Slow Tracking缓慢跟移",
-        "zoom-in": "Zoom In推近",
-        "zoom-out": "Zoom Out拉远",
-        "pan": "Pan摇移",
-        "dolly": "Dolly推轨",
-        "crane up": "Crane Up升镜",
-        "orbit": "Orbit环绕",
-        "handheld": "手持抖动",
+def call_llm(
+    system_prompt: str,
+    user_prompt: str,
+    model: str | None = None,
+    base_url: str | None = None,
+    api_key: str | None = None,
+) -> str:
+    """调用 OpenAI 兼容 API（默认 ZenMux），返回文本响应。"""
+    try:
+        from openai import OpenAI
+    except ImportError:
+        print("❌ 需要安装 openai: pip install openai", file=sys.stderr)
+        sys.exit(1)
+
+    _api_key = api_key or os.environ.get("ZENMUX_API_KEY")
+    if not _api_key:
+        print("❌ 请设置环境变量 ZENMUX_API_KEY", file=sys.stderr)
+        sys.exit(1)
+
+    _base_url = base_url or os.environ.get("ZENMUX_BASE_URL", DEFAULT_BASE_URL)
+    _model = model or os.environ.get("SEEDANCE_MODEL", DEFAULT_MODEL)
+
+    client = OpenAI(base_url=_base_url, api_key=_api_key)
+
+    print(f"[shot_prompt_generator] 调用 LLM: {_model} @ {_base_url}")
+    response = client.chat.completions.create(
+        model=_model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        max_tokens=12000,
+        temperature=0.7,
+    )
+    return response.choices[0].message.content
+
+
+# ─── Prompt 构建 ────────────────────────────────────────────────────────────
+
+def build_system_prompt(skill_content: str | None) -> str:
+    """构建 system prompt，包含 SKILL.md 规范（如果有的话）。"""
+    base = dedent("""\
+    你是 Seedance 2.0（即梦）分镜提示词专家。
+
+    你的任务：
+    根据视频分析结果（JSON），为每个 timeline 分镜生成可直接复制到即梦平台使用的中文提示词。
+
+    核心要求：
+    1. 所有提示词必须使用中文
+    2. 每个 shot 的 prompt 必须是完整可用的——直接粘贴到即梦就能生成
+    3. 根据 narrative_function 和 attention_level 调整提示词的强度和复杂度：
+       - hook（开场）：最强视觉冲击，前2秒定生死
+       - payoff/ending（高潮/结尾）：情绪最高点，用史诗结构
+       - build/setup/twist（中段）：服务叙事推进，保持节奏
+    4. 运镜用中英混合描述（如"Slow Crane Up缓慢升镜"），效果更好
+    5. 每个 prompt 末尾加"禁止：任何文字、字幕、LOGO或水印"
+    6. 单次生成上限15秒，超出的要标注拆分建议
+    7. 根据视觉风格自动匹配品质锚定词（UE5渲染/电影级/etc.）
+
+    输出格式：
+    严格输出一个 JSON 对象，结构如下（不要输出其他内容，不要 markdown code fence）：
+    {
+      "metadata": {
+        "source_title": "string",
+        "total_duration_seconds": number,
+        "aspect_ratio": "string",
+        "seedance_skill_used": boolean,
+        "recommended_mode": "string",
+        "abstract_pattern": "string",
+        "risk_points": ["string"],
+        "shot_count": number
+      },
+      "shots": [
+        {
+          "index": 1,
+          "time_range": "0s-3s",
+          "duration_seconds": 3,
+          "narrative_function": "hook",
+          "attention_level": 5,
+          "prompt": "完整的 Seedance 提示词",
+          "asset_hints": ["素材建议"]
+        }
+      ],
+      "variants": [
+        {
+          "name": "变体名",
+          "direction": "方向",
+          "what_changes": [],
+          "what_stays": [],
+          "note": "说明"
+        }
+      ],
+      "workflow_note": "生成顺序建议"
     }
-    parts = []
-    for s in shot_types:
-        parts.append(mapping.get(s.lower(), s))
-    for m in movement_patterns:
-        parts.append(mapping.get(m.lower(), m))
-    return " + ".join(parts) if parts else "固定镜头"
+    """)
+
+    if skill_content:
+        return (
+            base
+            + "\n\n---\n\n"
+            + "以下是 Seedance 2.0 官方提示词规范，请严格遵守其中的结构模板、运镜体系、"
+            + "@引用规则、质量自检 Checklist 等要求：\n\n"
+            + skill_content
+        )
+    else:
+        return (
+            base
+            + "\n\n注意：未提供 Seedance SKILL.md 规范文件，请根据你对 Seedance 2.0 的了解生成。"
+        )
 
 
-def _style_prefix(visual_language: dict) -> str:
-    """组装风格/色调前缀"""
-    keywords = visual_language.get("style_keywords", [])
-    palette = visual_language.get("palette", [])
-    lighting = visual_language.get("lighting", [])
-    style = _join(keywords, "、") or "Dark Fantasy"
-    color = _join(palette[:3], "+") or "深红+黑"
-    light = _join(lighting[:2], "+") or "高对比+体积雾"
-    return f"{style}风格，{color}色调，{light}光影"
+def build_user_prompt(analysis_data: dict) -> str:
+    """将 analysis.json 格式化为 user prompt。"""
+    analysis_json = json.dumps(analysis_data, ensure_ascii=False, indent=2)
+    return dedent(f"""\
+    请基于以下视频分析结果，为每个 timeline 分镜生成 Seedance 2.0 提示词。
+
+    分析结果：
+    {analysis_json}
+
+    要求：
+    1. 为 timeline 中的每个条目生成独立可用的提示词
+    2. hook 段和 payoff 段使用史诗/大制作结构（品质锚定 + 大气连贯声明 + 光影三层）
+    3. 普通段使用时间戳分镜法或基础结构
+    4. 每个 prompt 都要融入 visual_language 中的风格/色调/光影信息
+    5. 根据 camera_language 选择合适的运镜组合
+    6. 标注需要首帧图/参考素材的镜头
+    7. 超过15秒的段落标注拆分建议
+    8. 保留 transferable_pattern 中"必须保留"的元素
+    9. 生成2-3个变体方向建议
+    """)
 
 
-def _quality_anchor(visual_language: dict) -> str:
-    """根据视觉语言判断品质锚定词"""
-    keywords = " ".join(visual_language.get("style_keywords", [])).lower()
-    if any(k in keywords for k in ["fantasy", "gothic", "cinematic", "dark"]):
-        return "UE5渲染，电影级VFX，8K超清，"
-    if any(k in keywords for k in ["cyber", "sci-fi", "future"]):
-        return "UnrealEngine5渲染，工业光魔级VFX，杜比视界HDR，"
-    return "电影级渲染，超高细节，"
+# ─── 结果解析 ────────────────────────────────────────────────────────────────
+
+def parse_llm_response(response_text: str) -> dict:
+    """从 LLM 响应中提取 JSON。"""
+    text = response_text.strip()
+
+    # 去掉可能的 markdown code fence
+    if text.startswith("```"):
+        # 找到第一个换行后的内容
+        first_nl = text.index("\n")
+        last_fence = text.rfind("```")
+        if last_fence > first_nl:
+            text = text[first_nl + 1:last_fence].strip()
+
+    # 找 JSON 对象
+    json_start = text.find("{")
+    if json_start == -1:
+        raise ValueError("LLM 响应中没有找到 JSON 对象")
+
+    brace_count = 0
+    json_end = None
+    for i, ch in enumerate(text[json_start:], start=json_start):
+        if ch == "{":
+            brace_count += 1
+        elif ch == "}":
+            brace_count -= 1
+            if brace_count == 0:
+                json_end = i + 1
+                break
+
+    if json_end is None:
+        raise ValueError("JSON 对象不完整")
+
+    return json.loads(text[json_start:json_end])
 
 
-# ─── 单镜头 Prompt 生成 ─────────────────────────────────────────────────────
+# ─── 主入口（兼容原有调用方式）────────────────────────────────────────────────
 
-def build_shot_prompt(
-    shot: dict,
-    visual_language: dict,
-    camera_language: dict,
-    style_prefix: str,
-    quality_anchor: str,
-    use_seedance_skill: bool,
-    shot_index: int,
-    total_shots: int,
+def generate_shot_prompts(
+    analysis_data: dict,
+    model: str | None = None,
+    base_url: str | None = None,
+    api_key: str | None = None,
 ) -> dict:
     """
-    为单个 timeline 片段生成 Seedance prompt。
-    返回 dict: {index, time_range, narrative_function, prompt, asset_hint}
-    """
-    start = shot.get("start", 0)
-    end = shot.get("end", start + 3)
-    duration = end - start
-    # Seedance 单次上限 15s，超出截断提示
-    capped = min(duration, 15)
-
-    visual_event = shot.get("visual_event", "")
-    subject_action = shot.get("subject_action", "")
-    camera_action = shot.get("camera_action", "")
-    narrative_fn = shot.get("narrative_function", "build")
-    attention = shot.get("attention_level", 3)
-
-    # 镜头语言
-    shot_types = camera_language.get("shot_types", [])
-    movement_patterns = camera_language.get("movement_patterns", [])
-    camera_desc = _camera_cn([camera_action] if camera_action else shot_types[:2], movement_patterns[:1])
-
-    # 环境
-    env_traits = visual_language.get("environment_traits", [])
-    env_desc = _join(env_traits[:2]) or "迷雾场景"
-
-    # 纹理/特效
-    texture_fx = visual_language.get("texture_fx", [])
-    fx_desc = _join(texture_fx[:2])
-
-    # 主体设计
-    subject_traits = visual_language.get("subject_design_traits", [])
-    subject_desc = _join(subject_traits[:3])
-
-    # ── 构建 prompt ──
-    if use_seedance_skill:
-        # 按 Seedance skill 史诗/大制作结构
-        # hook 镜头用特别强调的开场
-        if narrative_fn == "hook":
-            prompt = (
-                f"{capped}秒，{quality_anchor}{style_prefix}，\n"
-                f"全片统一的体积雾弥散效果，高饱和点缀色彩策略，\n"
-                f"0-{capped}秒：{visual_event}，{subject_action}，"
-                f"{camera_desc}，{env_desc}背景，"
-                f"{'，'.join(subject_traits[:2]) + '，' if subject_traits else ''}"
-                f"{'，'.join(texture_fx[:2]) + '，' if texture_fx else ''}"
-                f"前2秒静止对峙制造张力，镜头缓慢推近；\n"
-                f"光影：高对比逆光+体积雾弥散（光源层），"
-                f"雾气柔化高光同时强化阴影对比（光行为层），"
-                f"{'，'.join(visual_language.get('palette', [])[:3])}（色调层）。\n"
-                f"禁止：任何文字、字幕、LOGO或水印"
-            )
-        elif narrative_fn in ("payoff", "ending"):
-            prompt = (
-                f"{capped}秒，{quality_anchor}{style_prefix}，\n"
-                f"高潮叙事收束段落，情绪强度最高点，\n"
-                f"0-{capped}秒：{visual_event}，{subject_action}，"
-                f"{camera_desc}，{env_desc}，"
-                f"法术/符咒/粒子爆发效果，慢镜头120帧/秒，\n"
-                f"镜头轻微抖动增强冲击感，雾粒粘镜效果；\n"
-                f"光影：爆发光源+环境色（光源层），光行为：丁达尔效应（光行为层），"
-                f"{'，'.join(visual_language.get('palette', [])[:2])}高对比（色调层）。\n"
-                f"收束：暗角+胶片颗粒，全程高张力，无冗余画面。\n"
-                f"禁止：任何文字、字幕、LOGO或水印"
-            )
-        else:
-            prompt = (
-                f"{capped}秒，{style_prefix}，\n"
-                f"0-{capped}秒：{visual_event}，{subject_action}，"
-                f"{camera_desc}，{env_desc}，"
-                f"{fx_desc + '，' if fx_desc else ''}"
-                f"体积雾弥散，{'，'.join(visual_language.get('lighting', [])[:2])}；\n"
-                f"禁止：任何文字、字幕、LOGO或水印"
-            )
-    else:
-        # 内置规则（简化版）
-        prompt = (
-            f"{capped}秒视频，{style_prefix}，"
-            f"{visual_event}，{subject_action}，"
-            f"镜头：{camera_desc}，场景：{env_desc}，"
-            f"{'特效：' + fx_desc + '，' if fx_desc else ''}"
-            f"高细节，电影感"
-        )
-
-    # 素材建议
-    asset_hint = []
-    if narrative_fn == "hook" or attention >= 4:
-        asset_hint.append("建议准备首帧参考图（@图片1）以锁定角色外貌")
-    if subject_traits:
-        asset_hint.append(f"角色需要：{_join(subject_traits[:2])}")
-    if duration > 15:
-        asset_hint.append(f"⚠️ 本段时长{duration}s，超出单次生成上限15s，建议拆为{duration // 15 + 1}段")
-
-    return {
-        "index": shot_index + 1,
-        "time_range": f"{start}s-{end}s",
-        "duration_seconds": duration,
-        "narrative_function": narrative_fn,
-        "attention_level": attention,
-        "prompt": prompt.strip(),
-        "asset_hints": asset_hint,
-    }
-
-
-# ─── 完整分镜计划生成 ───────────────────────────────────────────────────────
-
-def generate_shot_prompts(analysis_data: dict) -> dict:
-    """
     输入：analysis.json 的 dict
-    输出：shot_prompts dict，包含 metadata + shots 列表
+    输出：shot_prompts dict（结构同原版，向后兼容）
+
+    新增可选参数：model, base_url, api_key（均可通过环境变量配置）
     """
-    use_skill = detect_seedance_skill()
+    skill_content = load_seedance_skill()
+    system_prompt = build_system_prompt(skill_content)
+    user_prompt = build_user_prompt(analysis_data)
 
-    visual_language = analysis_data.get("visual_language", {})
-    camera_language = analysis_data.get("camera_language", {})
-    timeline = analysis_data.get("timeline", [])
-    rhythm = analysis_data.get("rhythm_structure", {})
-    meta = analysis_data.get("meta", {})
-    seedance = analysis_data.get("seedance_translation", {})
-    transferable = analysis_data.get("transferable_pattern", {})
-    next_steps = analysis_data.get("next_step_assets", {})
+    response_text = call_llm(
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        model=model,
+        base_url=base_url,
+        api_key=api_key,
+    )
 
-    style_prefix = _style_prefix(visual_language)
-    quality_anchor = _quality_anchor(visual_language)
+    result = parse_llm_response(response_text)
 
-    shots = []
-    for i, shot in enumerate(timeline):
-        shot_prompt = build_shot_prompt(
-            shot=shot,
-            visual_language=visual_language,
-            camera_language=camera_language,
-            style_prefix=style_prefix,
-            quality_anchor=quality_anchor,
-            use_seedance_skill=use_skill,
-            shot_index=i,
-            total_shots=len(timeline),
-        )
-        shots.append(shot_prompt)
+    # 确保 metadata 中有 seedance_skill_detected 字段（向后兼容）
+    if "metadata" in result:
+        result["metadata"]["seedance_skill_detected"] = skill_content is not None
+        # 兼容旧字段名
+        if "seedance_skill_used" in result["metadata"]:
+            del result["metadata"]["seedance_skill_used"]
 
-    # 汇总变体建议
-    variants = next_steps.get("variants", [])
-    variant_notes = []
-    for v in variants:
-        variant_notes.append({
-            "name": v.get("name"),
-            "direction": v.get("direction"),
-            "what_changes": v.get("what_changes", []),
-            "what_stays": v.get("what_stays", []),
-            "note": f"沿用「{_join(v.get('what_stays', []))}」，替换「{_join(v.get('what_changes', []))}」",
-        })
-
-    return {
-        "metadata": {
-            "source_title": meta.get("title", "untitled"),
-            "total_duration_seconds": meta.get("duration_seconds", 0),
-            "aspect_ratio": meta.get("aspect_ratio", "9:16"),
-            "seedance_skill_detected": use_skill,
-            "recommended_mode": seedance.get("recommended_mode", "multi-stage"),
-            "abstract_pattern": transferable.get("abstract_pattern", ""),
-            "risk_points": seedance.get("risk_points", []),
-            "shot_count": len(shots),
-        },
-        "shots": shots,
-        "variants": variant_notes,
-        "workflow_note": (
-            "生成顺序建议：① 准备首帧参考图（用于 hook 段） "
-            "→ ② 按 shots 列表逐条在即梦生成 3-5s 片段 "
-            "→ ③ 按 rhythm_structure.pattern 节奏卡点剪辑拼接"
-        ),
-    }
-    
+    return result
 
 
-# ─── Markdown 报告渲染 ──────────────────────────────────────────────────────
+# ─── Markdown 报告渲染（保持不变）──────────────────────────────────────────────
 
 def render_shot_prompts_md(shot_prompts: dict) -> str:
-    meta = shot_prompts["metadata"]
+    meta = shot_prompts.get("metadata", {})
     workflow_note = shot_prompts.get("workflow_note", "")
     lines = [
-        f"# 分镜提示词计划：{meta['source_title']}",
+        f"# 分镜提示词计划：{meta.get('source_title', 'untitled')}",
         "",
-        f"> **Seedance Skill**：{'✅ 已检测到，按官方规范生成' if meta['seedance_skill_detected'] else '❌ 未检测到，使用内置规则'}",
-        f"> **推荐模式**：{meta['recommended_mode']}",
-        f"> **抽象骨架**：{meta['abstract_pattern']}",
+        f"> **Seedance Skill**：{'✅ 已使用官方规范' if meta.get('seedance_skill_detected') else '⚠️ 未检测到规范文件，基于 LLM 内置知识生成'}",
+        f"> **推荐模式**：{meta.get('recommended_mode', 'N/A')}",
+        f"> **抽象骨架**：{meta.get('abstract_pattern', 'N/A')}",
         "",
         "---",
         "",
@@ -300,12 +282,12 @@ def render_shot_prompts_md(shot_prompts: dict) -> str:
 
     lines += ["---", "", "## 分镜提示词", ""]
 
-    for shot in shot_prompts["shots"]:
+    for shot in shot_prompts.get("shots", []):
         lines += [
-            f"### Shot {shot['index']}  `{shot['time_range']}`  `{shot['narrative_function']}`  注意力:{shot['attention_level']}/5",
+            f"### Shot {shot.get('index', '?')}  `{shot.get('time_range', '?')}`  `{shot.get('narrative_function', '?')}`  注意力:{shot.get('attention_level', '?')}/5",
             "",
             "```",
-            shot["prompt"],
+            shot.get("prompt", ""),
             "```",
             "",
         ]
@@ -318,9 +300,9 @@ def render_shot_prompts_md(shot_prompts: dict) -> str:
         lines += ["---", "", "## 变体方向", ""]
         for v in shot_prompts["variants"]:
             lines += [
-                f"### {v['name']} — {v['direction']}",
+                f"### {v.get('name', '?')} — {v.get('direction', '?')}",
                 "",
-                v["note"],
+                v.get("note", ""),
                 "",
             ]
 
@@ -332,9 +314,21 @@ def render_shot_prompts_md(shot_prompts: dict) -> str:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="从 analysis.json 生成 Seedance 分镜提示词")
+    parser = argparse.ArgumentParser(
+        description="从 analysis.json 生成 Seedance 分镜提示词（通过 LLM）"
+    )
     parser.add_argument("analysis_json", help="analysis.json 路径")
     parser.add_argument("--output-dir", default=None, help="输出目录（默认与 JSON 同目录）")
+    parser.add_argument(
+        "--model",
+        default=None,
+        help=f"LLM 模型（默认 {DEFAULT_MODEL}，可选 anthropic/claude-opus-4.6, openai/gpt-5.2 等）",
+    )
+    parser.add_argument(
+        "--base-url",
+        default=None,
+        help=f"API base URL（默认 {DEFAULT_BASE_URL}）",
+    )
     args = parser.parse_args()
 
     json_path = Path(args.analysis_json)
@@ -343,9 +337,17 @@ def main():
     with open(json_path, encoding="utf-8") as f:
         data = json.load(f)
 
-    shot_prompts = generate_shot_prompts(data)
+    print(f"[shot_prompt_generator] 分析文件：{json_path}")
+    print(f"[shot_prompt_generator] Timeline 条目数：{len(data.get('timeline', []))}")
+
+    shot_prompts = generate_shot_prompts(
+        data,
+        model=args.model,
+        base_url=args.base_url,
+    )
 
     # 保存 JSON
+    output_dir.mkdir(parents=True, exist_ok=True)
     out_json = output_dir / "shot_prompts.json"
     out_json.write_text(json.dumps(shot_prompts, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -353,9 +355,11 @@ def main():
     out_md = output_dir / "shot_prompts.md"
     out_md.write_text(render_shot_prompts_md(shot_prompts), encoding="utf-8")
 
+    shot_count = shot_prompts.get("metadata", {}).get("shot_count", len(shot_prompts.get("shots", [])))
+    skill_used = shot_prompts.get("metadata", {}).get("seedance_skill_detected", False)
     print(f"✅ 生成完成：{out_json}")
     print(f"✅ 生成完成：{out_md}")
-    print(f"   共 {shot_prompts['metadata']['shot_count']} 个分镜 prompt")
+    print(f"   共 {shot_count} 个分镜 prompt，Seedance skill: {'✅ 已使用' if skill_used else '⚠️ 未检测到'}")
 
 
 if __name__ == "__main__":

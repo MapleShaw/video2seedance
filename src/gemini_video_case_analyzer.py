@@ -10,7 +10,7 @@ from google.genai import types
 from prompts import SYSTEM_PROMPT, build_user_prompt
 from utils import extract_first_json_block
 from formatter import render_markdown_stub
-from shot_prompt_generator import generate_shot_prompts, render_shot_prompts_md
+from shot_prompt_generator import generate_shot_prompts, render_shot_prompts_md, DEFAULT_MODEL
 
 
 def run_gemini(video_path, prompt, model="gemini-2.0-flash"):
@@ -55,7 +55,8 @@ def run_gemini(video_path, prompt, model="gemini-2.0-flash"):
     return response.text
 
 
-def save_outputs(output_dir: Path, data: dict, report_md: str, raw_text: str):
+def save_outputs(output_dir: Path, data: dict, report_md: str, raw_text: str,
+                 prompt_model: str | None = None):
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "analysis.json").write_text(
         json.dumps(data, ensure_ascii=False, indent=2),
@@ -64,10 +65,10 @@ def save_outputs(output_dir: Path, data: dict, report_md: str, raw_text: str):
     (output_dir / "analysis.md").write_text(report_md, encoding="utf-8")
     (output_dir / "raw_output.txt").write_text(raw_text, encoding="utf-8")
 
-    # 自动生成 Seedance 分镜提示词
-    print("正在生成 Seedance 分镜提示词...")
+    # 自动生成 Seedance 分镜提示词（通过 LLM）
+    print(f"正在通过 LLM 生成 Seedance 分镜提示词（模型: {prompt_model or DEFAULT_MODEL}）...")
     try:
-        shot_prompts = generate_shot_prompts(data)
+        shot_prompts = generate_shot_prompts(data, model=prompt_model)
         (output_dir / "shot_prompts.json").write_text(
             json.dumps(shot_prompts, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -76,9 +77,9 @@ def save_outputs(output_dir: Path, data: dict, report_md: str, raw_text: str):
             render_shot_prompts_md(shot_prompts),
             encoding="utf-8",
         )
-        shot_count = shot_prompts["metadata"]["shot_count"]
-        skill_used = shot_prompts["metadata"]["seedance_skill_detected"]
-        print(f"✅ 分镜提示词已生成：{shot_count} 个镜头，Seedance skill: {'已使用' if skill_used else '未检测到，用内置规则'}")
+        shot_count = shot_prompts.get("metadata", {}).get("shot_count", len(shot_prompts.get("shots", [])))
+        skill_used = shot_prompts.get("metadata", {}).get("seedance_skill_detected", False)
+        print(f"✅ 分镜提示词已生成：{shot_count} 个镜头，Seedance skill: {'✅ 已使用' if skill_used else '⚠️ 未检测到'}")
     except Exception as e:
         print(f"⚠️  分镜提示词生成失败（不影响主分析输出）：{e}")
 
@@ -92,7 +93,10 @@ def main():
     parser.add_argument("--focus", default="hook,rhythm,visual_style,seedance_translation")
     parser.add_argument("--variant-direction", default="保留核心机制，但允许换角色、换题材、换世界观")
     parser.add_argument("--output-dir", default="./output")
-    parser.add_argument("--model", default="gemini-2.0-flash")
+    parser.add_argument("--model", default="gemini-2.0-flash",
+                        help="Gemini 视频分析模型")
+    parser.add_argument("--prompt-model", default=None,
+                        help="分镜提示词生成 LLM 模型（默认 anthropic/claude-sonnet-4.6，走 ZenMux）")
 
     args = parser.parse_args()
 
@@ -111,7 +115,8 @@ def main():
     if not report_md:
         report_md = render_markdown_stub(data)
 
-    save_outputs(Path(args.output_dir), data, report_md, raw_text)
+    save_outputs(Path(args.output_dir), data, report_md, raw_text,
+                 prompt_model=args.prompt_model)
     print(f"Saved outputs to {args.output_dir}")
 
 
