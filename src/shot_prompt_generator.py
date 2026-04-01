@@ -34,16 +34,35 @@ SKILL_SEARCH_PATHS = [
 
 
 def load_seedance_skill() -> str | None:
-    """尝试加载 SKILL.md 内容。找到返回文本，找不到返回 None。"""
+    """
+    尝试加载 SKILL.md 内容。找到返回文本，找不到返回 None。
+    
+    查找顺序：
+    1. 环境变量 SEEDANCE_SKILL_PATH（优先级最高，支持 .env 配置）
+    2. 内置搜索路径（OpenClaw workspace / 系统级）
+    3. 项目根目录 SKILL.md
+    """
+    # 优先检查环境变量指定的路径
+    env_path = os.environ.get("SEEDANCE_SKILL_PATH")
+    if env_path:
+        p = Path(env_path).expanduser()
+        if p.exists():
+            print(f"[shot_prompt_generator] ✅ 从 SEEDANCE_SKILL_PATH 加载: {p}")
+            return p.read_text(encoding="utf-8")
+        else:
+            print(f"[shot_prompt_generator] ⚠️ SEEDANCE_SKILL_PATH 指向的文件不存在: {p}")
+
     for p in SKILL_SEARCH_PATHS:
         if p.exists():
             print(f"[shot_prompt_generator] ✅ 检测到 Seedance skill: {p}")
             return p.read_text(encoding="utf-8")
+
     # 也检查项目自带的 SKILL.md
     local_skill = Path(__file__).parent.parent / "SKILL.md"
     if local_skill.exists():
         print(f"[shot_prompt_generator] ✅ 检测到项目内 SKILL.md: {local_skill}")
         return local_skill.read_text(encoding="utf-8")
+
     print("[shot_prompt_generator] ⚠️ 未检测到 Seedance SKILL.md，LLM 将使用内置知识生成")
     return None
 
