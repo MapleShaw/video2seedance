@@ -4,6 +4,13 @@ import os
 import time
 from pathlib import Path
 
+# 自动加载项目根目录 .env
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent.parent / ".env")
+except ImportError:
+    pass
+
 from google import genai
 from google.genai import types
 
