@@ -132,6 +132,32 @@ def build_system_prompt(skill_content: str | None) -> str:
     6. 单次生成上限15秒，超出的要标注拆分建议
     7. 根据视觉风格自动匹配品质锚定词（UE5渲染/电影级/etc.）
 
+    提示词风格锚定要求（极其重要，防止风格偏移）：
+    1. 每个 prompt 必须以"风格锚定前缀"开头，格式根据 realism_level 选择：
+       - 写实真人向（photorealistic/semi-realistic）：
+         "{时长}，电影级真人实拍，自然皮肤质感，{camera_equipment_feel}，{色调总纲}"
+       - 3D/游戏向（3d-render/stylized）：
+         "{时长}，UE5渲染，{VFX等级}，{画质规格}，{风格总纲}"
+       - 动画/国漫向（anime）：
+         "{时长}，{动画风格}渲染，{色调总纲}"
+       - 抽象/实验向（abstract）：
+         "{时长}，{风格关键词}，{色调总纲}"
+       风格前缀必须从 analysis.json 的 visual_language.realism_level 和 production_look 推断，
+       绝不能凭空编造风格——真人写实视频绝不能用3D渲染词汇
+
+    2. 人物描述要求：
+       - 首次出现的人物必须完整描述外貌（利用 timeline 中的 subject_description 字段）
+       - 包含：性别、年龄段、发型发色、肤色、五官特征、服装完整描述（材质+颜色+款式）、体态
+       - 后续镜头可简化为"同一角色"但必须保留 2-3 个关键辨识特征（如"黑色短发、白衬衫的青年男性"）
+       - 如果 subject_description 字段有内容，优先使用其中的描述
+
+    3. 环境和光影必须从 timeline 的 lighting_description 和 environment_description 提取，不能用泛词
+       - ❌ 错误："温暖的光线""室内环境"
+       - ✅ 正确："左侧45度暖色柔光，色温约3200K，营造伦勃朗光效果""现代简约客厅，灰色布艺沙发，落地窗透入自然光"
+
+    4. 运镜必须具体到景别+运动方式+速度，如"Medium Close-up 中近景，Slow Push In 缓慢推进"
+       利用 timeline 中的 camera_action 和 camera_details 字段
+
     输出格式：
     严格输出一个 JSON 对象，结构如下（不要输出其他内容，不要 markdown code fence）：
     {
@@ -148,12 +174,16 @@ def build_system_prompt(skill_content: str | None) -> str:
       "shots": [
         {
           "index": 1,
-          "time_range": "0s-3s",
-          "duration_seconds": 3,
+          "time_range": "0s-4s",
+          "duration_seconds": 4,
           "narrative_function": "hook",
           "attention_level": 5,
-          "prompt": "完整的 Seedance 提示词",
-          "asset_hints": ["素材建议"]
+          "prompt": "完整的 Seedance 提示词（必须以风格锚定前缀开头）",
+          "asset_hints": ["素材建议"],
+          "original_segments": [{"start": 0, "end": 2}, {"start": 2, "end": 4}],
+          "style_anchor": "写实真人/3D渲染/动画/etc",
+          "subject_description_summary": "本镜头的人物外貌摘要",
+          "first_frame_prompt": "如果需要首帧图，这里给出完整的图片生成提示词（中文），否则为空字符串"
         }
       ],
       "variants": [
@@ -203,6 +233,29 @@ def build_user_prompt(analysis_data: dict) -> str:
     7. 超过15秒的段落标注拆分建议
     8. 保留 transferable_pattern 中"必须保留"的元素
     9. 生成2-3个变体方向建议
+
+    短片段处理策略（Seedance 最短 4 秒，极其重要）：
+    - 如果某个 timeline 条目时长 < 4 秒：
+      1. 优先与相邻片段合并（前一个或后一个），合并后总时长不超过 10 秒
+      2. 如果无法合并（前后都已超长），则将该片段扩展到 4 秒，在 prompt 中自然延伸动作节奏
+      3. 合并后的 shot 在 original_segments 字段标注原始 time_range 来源，方便后期精确剪辑
+    - 每个 shot 的 duration_seconds 必须 >= 4 且 <= 10（Seedance 最佳范围 4-10s）
+    - 如果原始片段刚好 4-10 秒，则 original_segments 只包含自身
+    - 绝不允许输出 duration_seconds < 4 的 shot
+
+    风格锚定要求（防止风格偏移）：
+    - 从 visual_language.realism_level 判断视频风格类型
+    - 从 visual_language.production_look 获取具体制作风格描述
+    - 从 visual_language.skin_texture 获取皮肤质感信息
+    - 从 visual_language.camera_equipment_feel 获取拍摄设备质感
+    - 每个 shot 必须填写 style_anchor 字段，标注该镜头的风格锚定
+    - 每个 shot 必须填写 subject_description_summary，从 timeline 对应条目的 subject_description 提取
+    - 需要首帧图的 shot 必须填写 first_frame_prompt（完整的中文图片生成提示词），不需要的填空字符串
+
+    人物描述一致性要求：
+    - 利用 timeline 中每条的 subject_description 字段获取人物外貌信息
+    - 首次出现的人物必须完整描述（性别、年龄段、发型发色、肤色、五官、服装、体态）
+    - 后续镜头至少保留 2-3 个关键辨识特征
     """)
 
 
