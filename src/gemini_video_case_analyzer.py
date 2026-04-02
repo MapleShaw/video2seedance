@@ -29,11 +29,20 @@ def run_gemini(video_path, prompt, model="gemini-2.0-flash"):
     if not api_key:
         raise RuntimeError("请设置环境变量 GEMINI_API_KEY")
 
-    # 视频分析耗时较长，设置 10 分钟 timeout，防止代理提前断连
-    # timeout 单位：秒（google-genai SDK 约定）
+    # 视频上传+分析耗时较长，通过 client_args 注入 httpx timeout（覆盖代理默认超时）
+    # timeout 各阶段单独设置：write/read 各 10 分钟
     client = genai.Client(
         api_key=api_key,
-        http_options={"timeout": 600},
+        http_options=types.HttpOptions(
+            client_args={
+                "timeout": {
+                    "connect": 30.0,
+                    "write": 600.0,
+                    "read": 600.0,
+                    "pool": 10.0,
+                }
+            }
+        ),
     )
 
     video_file_path = Path(video_path)
