@@ -4,6 +4,8 @@ import os
 import time
 from pathlib import Path
 
+import httpx
+
 # 自动加载项目根目录 .env
 try:
     from dotenv import load_dotenv
@@ -29,7 +31,9 @@ def run_gemini(video_path, prompt, model="gemini-2.0-flash"):
     if not api_key:
         raise RuntimeError("请设置环境变量 GEMINI_API_KEY")
 
-    client = genai.Client(api_key=api_key)
+    # 视频分析耗时较长，设置 10 分钟 timeout，防止代理提前断连
+    http_client = httpx.Client(timeout=600.0)
+    client = genai.Client(api_key=api_key, http_client=http_client)
 
     video_file_path = Path(video_path)
     print(f"正在上传视频: {video_file_path.name} ...")
