@@ -214,17 +214,17 @@ def build_system_prompt(skill_content: str | None) -> str:
         )
 
 
-def build_user_prompt(analysis_data: dict) -> str:
-    """将 analysis.json 格式化为 user prompt。"""
-    analysis_json = json.dumps(analysis_data, ensure_ascii=False, indent=2)
-    return dedent(f"""\
-    请基于以下视频分析结果，为每个 timeline 分镜生成 Seedance 2.0 提示词。
+def _extract_global_context(analysis_data: dict) -> dict:
+    """提取全局风格上下文（不含 timeline），用于每批调用。"""
+    return {
+        k: v for k, v in analysis_data.items()
+        if k != "timeline"
+    }
 
-    分析结果：
-    {analysis_json}
 
+BATCH_SHOT_RULES = dedent("""\
     要求：
-    1. 为 timeline 中的每个条目生成独立可用的提示词
+    1. 为提供的 timeline 条目生成独立可用的提示词
     2. hook 段和 payoff 段使用史诗/大制作结构（品质锚定 + 大气连贯声明 + 光影三层）
     3. 普通段使用时间戳分镜法或基础结构
     4. 每个 prompt 都要融入 visual_language 中的风格/色调/光影信息
@@ -232,7 +232,6 @@ def build_user_prompt(analysis_data: dict) -> str:
     6. 标注需要首帧图/参考素材的镜头
     7. 超过15秒的段落标注拆分建议
     8. 保留 transferable_pattern 中"必须保留"的元素
-    9. 生成2-3个变体方向建议
 
     短片段处理策略（Seedance 最短 4 秒，极其重要）：
     - 如果某个 timeline 条目时长 < 4 秒：
@@ -256,7 +255,84 @@ def build_user_prompt(analysis_data: dict) -> str:
     - 利用 timeline 中每条的 subject_description 字段获取人物外貌信息
     - 首次出现的人物必须完整描述（性别、年龄段、发型发色、肤色、五官、服装、体态）
     - 后续镜头至少保留 2-3 个关键辨识特征
+""")
+
+
+def build_user_prompt(analysis_data: dict) -> str:
+    """将 analysis.json 格式化为 user prompt（整体模式，向后兼容）。"""
+    analysis_json = json.dumps(analysis_data, ensure_ascii=False, indent=2)
+    return dedent(f"""\
+    请基于以下视频分析结果，为每个 timeline 分镜生成 Seedance 2.0 提示词。
+
+    分析结果：
+    {analysis_json}
+
+    {BATCH_SHOT_RULES}
+    9. 生成2-3个变体方向建议
     """)
+
+
+def build_batch_user_prompt(
+    global_context: dict,
+    timeline_batch: list,
+    batch_index: int,
+    total_batches: int,
+    shot_index_start: int,
+    is_first_batch: bool,
+    is_last_batch: bool,
+) -> str:
+    """为单个批次构建 user prompt。"""
+    ctx_json = json.dumps(global_context, ensure_ascii=False, indent=2)
+    batch_json = json.dumps(timeline_batch, ensure_ascii=False, indent=2)
+
+    header = dedent(f"""\
+    这是分批生成的第 {batch_index}/{total_batches} 批。
+    Shot index 从 {shot_index_start} 开始编号。
+
+    全局视觉/风格上下文（所有批次共享）：
+    {ctx_json}
+
+    本批次需要处理的 timeline 条目：
+    {batch_json}
+
+    {BATCH_SHOT_RULES}
+    """)
+
+    if is_first_batch:
+        header += "\n这是第一批，请同时生成 metadata 信息（source_title, total_duration_seconds, aspect_ratio, recommended_mode, abstract_pattern, risk_points）。\n"
+
+    if is_last_batch:
+        header += "\n这是最后一批，请同时生成 variants（2-3个变体方向建议）和 workflow_note。\n"
+
+    if not is_first_batch and not is_last_batch:
+        header += "\n本批次只需输出 shots 数组，不需要 metadata/variants/workflow_note。\n"
+
+    header += dedent("""\
+
+    输出格式：严格输出一个 JSON 对象（不要 markdown code fence）：
+    {
+      "shots": [
+        {
+          "index": number,
+          "time_range": "0s-4s",
+          "duration_seconds": 4,
+          "narrative_function": "hook",
+          "attention_level": 5,
+          "prompt": "完整的 Seedance 提示词",
+          "asset_hints": ["素材建议"],
+          "original_segments": [{"start": 0, "end": 4}],
+          "style_anchor": "写实真人/3D渲染/动画/etc",
+          "subject_description_summary": "人物外貌摘要",
+          "first_frame_prompt": "首帧图提示词或空字符串"
+        }
+      ]
+    }
+    """)
+
+    return header
+
+
+BATCH_SIZE = 4  # 每批处理的 timeline 条目数
 
 
 # ─── 结果解析 ────────────────────────────────────────────────────────────────
@@ -312,26 +388,93 @@ def generate_shot_prompts(
     model: str | None = None,
     base_url: str | None = None,
     api_key: str | None = None,
+    batch_size: int = BATCH_SIZE,
 ) -> dict:
     """
     输入：analysis.json 的 dict
     输出：shot_prompts dict（结构同原版，向后兼容）
 
-    新增可选参数：model, base_url, api_key（均可通过环境变量配置）
+    当 timeline 条目数 > batch_size 时自动分批调用 LLM，最后合并结果。
     """
     skill_content = load_seedance_skill()
     system_prompt = build_system_prompt(skill_content)
-    user_prompt = build_user_prompt(analysis_data)
 
-    response_text = call_llm(
-        system_prompt=system_prompt,
-        user_prompt=user_prompt,
-        model=model,
-        base_url=base_url,
-        api_key=api_key,
-    )
+    timeline = analysis_data.get("timeline", [])
 
-    result = parse_llm_response(response_text)
+    # 少量条目直接整体生成（向后兼容）
+    if len(timeline) <= batch_size:
+        print(f"[shot_prompt_generator] Timeline {len(timeline)} 条，整体生成")
+        user_prompt = build_user_prompt(analysis_data)
+        response_text = call_llm(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            model=model,
+            base_url=base_url,
+            api_key=api_key,
+        )
+        result = parse_llm_response(response_text)
+    else:
+        # 分批生成
+        global_context = _extract_global_context(analysis_data)
+        batches = [
+            timeline[i:i + batch_size]
+            for i in range(0, len(timeline), batch_size)
+        ]
+        total_batches = len(batches)
+        print(f"[shot_prompt_generator] Timeline {len(timeline)} 条，分 {total_batches} 批生成（每批 {batch_size} 条）")
+
+        all_shots = []
+        result = {}
+        shot_index = 1
+
+        for bi, batch in enumerate(batches, start=1):
+            is_first = bi == 1
+            is_last = bi == total_batches
+
+            user_prompt = build_batch_user_prompt(
+                global_context=global_context,
+                timeline_batch=batch,
+                batch_index=bi,
+                total_batches=total_batches,
+                shot_index_start=shot_index,
+                is_first_batch=is_first,
+                is_last_batch=is_last,
+            )
+
+            print(f"[shot_prompt_generator] 第 {bi}/{total_batches} 批（timeline 条目 {len(batch)} 条）...")
+            response_text = call_llm(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                model=model,
+                base_url=base_url,
+                api_key=api_key,
+            )
+            batch_result = parse_llm_response(response_text)
+
+            batch_shots = batch_result.get("shots", [])
+            # 重新编号 shot index，确保全局连续
+            for shot in batch_shots:
+                shot["index"] = shot_index
+                shot_index += 1
+            all_shots.extend(batch_shots)
+            print(f"[shot_prompt_generator] 第 {bi} 批完成，生成 {len(batch_shots)} 个 shots")
+
+            # 从第一批提取 metadata
+            if is_first and "metadata" in batch_result:
+                result["metadata"] = batch_result["metadata"]
+
+            # 从最后一批提取 variants 和 workflow_note
+            if is_last:
+                if "variants" in batch_result:
+                    result["variants"] = batch_result["variants"]
+                if "workflow_note" in batch_result:
+                    result["workflow_note"] = batch_result["workflow_note"]
+
+        result["shots"] = all_shots
+
+        # 更新 metadata 中的 shot_count
+        if "metadata" in result:
+            result["metadata"]["shot_count"] = len(all_shots)
 
     # 确保 metadata 中有 seedance_skill_detected 字段（向后兼容）
     if "metadata" in result:
@@ -418,6 +561,12 @@ def main():
         default=None,
         help=f"API base URL（默认 {DEFAULT_BASE_URL}）",
     )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=BATCH_SIZE,
+        help=f"每批处理的 timeline 条目数（默认 {BATCH_SIZE}，设大值可禁用分批）",
+    )
     args = parser.parse_args()
 
     json_path = Path(args.analysis_json)
@@ -433,6 +582,7 @@ def main():
         data,
         model=args.model,
         base_url=args.base_url,
+        batch_size=args.batch_size,
     )
 
     # 保存 JSON
