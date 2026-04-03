@@ -118,7 +118,58 @@ def build_system_prompt(skill_content: str | None) -> str:
     你是 Seedance 2.0（即梦）分镜提示词专家。
 
     你的任务：
-    根据视频分析结果（JSON），为每个 timeline 分镜生成可直接复制到即梦平台使用的中文提示词。
+    根据视频分析结果（JSON），生成完整的生产资料包：
+    A) 角色参考图 prompt（character_sheets）— 为片中每个独立角色生成高质量图片生成提示词
+    B) 分镜视频 prompt（shots）— 每个镜头的即梦视频生成提示词
+    C) 首帧图 prompt（first_frame_prompt）— 关键镜头的首帧参考图提示词
+
+    这三类 prompt 共同定义整部片子的视觉基调，必须高质量、可直接使用。
+
+    ═══════════════════════════════════════════
+    一、角色参考图（character_sheets）—— 整部片子的视觉锚点
+    ═══════════════════════════════════════════
+
+    为片中每个有辨识度的角色（包括非人类角色、生物、机甲等）生成独立的角色参考图 prompt。
+    这些图将用于：1) 给即梦的"参考图"功能做角色一致性锚定 2) 给首帧图做角色参考
+
+    角色图 prompt 必须包含：
+    - 构图指令：正面半身/全身/3/4侧面，纯色或简洁背景，角色居中
+    - 风格锚定：与视频整体风格严格一致（写实→写实，3D→3D，不能跑偏）
+    - 面部五官：眼型、眉形、鼻型、唇形、脸型轮廓、肤色肤质
+    - 发型发色：具体描述（如"齐肩微卷黑发，碎刘海遮住右眉"）
+    - 服装全描述：从上到下，材质+颜色+款式+配饰（如"黑色哑光皮质长风衣，内搭深灰高领针织衫"）
+    - 体态气质：身材比例、姿态气场（如"削瘦高挑，微微前倾的警觉姿态"）
+    - 特征道具/标志：如果有标志性物件（武器、面具、饰品），必须包含
+    - 光影基调：与视频整体光影一致的角色打光
+    - 画质规格："8K, 超精细, 角色设定图, character design sheet"
+    - 末尾禁止项："禁止：任何文字、字幕、LOGO、水印、多余背景元素"
+
+    ═══════════════════════════════════════════
+    二、首帧图（first_frame_prompt）—— 关键镜头的视觉起点
+    ═══════════════════════════════════════════
+
+    以下镜头必须生成 first_frame_prompt：
+    - narrative_function 为 hook 的镜头（开场第一印象）
+    - narrative_function 为 payoff/twist 的镜头（视觉转折点）
+    - 包含新场景/新环境首次出现的镜头
+    - 包含复杂构图、多角色互动、大场景的镜头
+    - attention_level >= 4 的镜头
+
+    首帧图 prompt 必须包含：
+    - 画面构图：景别 + 角色位置 + 视觉重心（如"Wide Shot 大全景，人物居画面下三分之一处，上方留大面积天空"）
+    - 角色状态：引用 character_sheets 中的角色（如"角色A 面朝镜头，右手持剑，微侧身"），保留关键辨识特征
+    - 环境细节：具体空间描述，材质、光影、氛围物件（不能用"某个环境"这种泛词）
+    - 光影层次：主光源方向+补光+轮廓光+色温（如"顶部冷白主光从右侧45度打下，左侧暖色反射补光，边缘冷蓝轮廓光"）
+    - 色调氛围：整体色调方案 + 后期风格（如"低饱和青橙对比调色，暗部偏蓝绿，高光偏暖橙"）
+    - 风格锚定：与视频和角色图严格一致
+    - 画质规格："8K, 超精细, 电影级构图, cinematic composition, masterpiece"
+    - 末尾禁止项："禁止：任何文字、字幕、LOGO、水印"
+
+    不需要首帧图的镜头（简单运镜延续、无场景切换）：first_frame_prompt 填空字符串。
+
+    ═══════════════════════════════════════════
+    三、分镜视频 prompt（shots）—— 即梦视频生成提示词
+    ═══════════════════════════════════════════
 
     核心要求：
     1. 所有提示词必须使用中文
@@ -158,7 +209,10 @@ def build_system_prompt(skill_content: str | None) -> str:
     4. 运镜必须具体到景别+运动方式+速度，如"Medium Close-up 中近景，Slow Push In 缓慢推进"
        利用 timeline 中的 camera_action 和 camera_details 字段
 
-    输出格式：
+    ═══════════════════════════════════════════
+    四、输出格式
+    ═══════════════════════════════════════════
+
     严格输出一个 JSON 对象，结构如下（不要输出其他内容，不要 markdown code fence）：
     {
       "metadata": {
@@ -169,8 +223,19 @@ def build_system_prompt(skill_content: str | None) -> str:
         "recommended_mode": "string",
         "abstract_pattern": "string",
         "risk_points": ["string"],
-        "shot_count": number
+        "shot_count": number,
+        "character_count": number
       },
+      "character_sheets": [
+        {
+          "id": "char_A",
+          "name": "角色名或描述性标签（如'黑衣剑客'、'白发少女'）",
+          "role": "主角/配角/背景角色",
+          "appears_in_shots": [1, 2, 5],
+          "prompt": "完整的角色参考图生成提示词（中文，必须包含构图指令+风格锚定+五官+发型+服装+体态+光影+画质规格+禁止项）",
+          "visual_tags": ["关键视觉标签，用于后续 prompt 快速引用"]
+        }
+      ],
       "shots": [
         {
           "index": 1,
@@ -178,12 +243,14 @@ def build_system_prompt(skill_content: str | None) -> str:
           "duration_seconds": 4,
           "narrative_function": "hook",
           "attention_level": 5,
-          "prompt": "完整的 Seedance 提示词（必须以风格锚定前缀开头）",
+          "prompt": "完整的 Seedance 视频提示词（必须以风格锚定前缀开头）",
+          "first_frame_prompt": "完整的首帧图生成提示词（中文，包含构图+角色+环境+光影+色调+画质+禁止项），不需要则为空字符串",
+          "first_frame_required": true,
+          "character_refs": ["char_A"],
           "asset_hints": ["素材建议"],
           "original_segments": [{"start": 0, "end": 2}, {"start": 2, "end": 4}],
           "style_anchor": "写实真人/3D渲染/动画/etc",
-          "subject_description_summary": "本镜头的人物外貌摘要",
-          "first_frame_prompt": "如果需要首帧图，这里给出完整的图片生成提示词（中文），否则为空字符串"
+          "subject_description_summary": "本镜头的人物外貌摘要"
         }
       ],
       "variants": [
@@ -195,7 +262,7 @@ def build_system_prompt(skill_content: str | None) -> str:
           "note": "说明"
         }
       ],
-      "workflow_note": "生成顺序建议"
+      "workflow_note": "生成顺序建议：1.先生成角色参考图 → 2.生成首帧图 → 3.用首帧图+角色图生成视频"
     }
     """)
 
@@ -269,6 +336,8 @@ def build_user_prompt(analysis_data: dict) -> str:
 
     {BATCH_SHOT_RULES}
     9. 生成2-3个变体方向建议
+    10. 生成 character_sheets：为视频中每个独立角色生成高质量角色参考图 prompt（按 system prompt 中的角色图规范）
+    11. 每个 shot 标注 character_refs 引用角色 id，标注 first_frame_required 和 first_frame_prompt
     """)
 
 
@@ -299,13 +368,18 @@ def build_batch_user_prompt(
     """)
 
     if is_first_batch:
-        header += "\n这是第一批，请同时生成 metadata 信息（source_title, total_duration_seconds, aspect_ratio, recommended_mode, abstract_pattern, risk_points）。\n"
+        header += dedent("""\
+
+        这是第一批，请同时生成：
+        1. metadata 信息（source_title, total_duration_seconds, aspect_ratio, recommended_mode, abstract_pattern, risk_points, character_count）
+        2. character_sheets — 为视频中所有独立角色生成角色参考图 prompt（按 system prompt 中的角色图规范）
+        """)
 
     if is_last_batch:
         header += "\n这是最后一批，请同时生成 variants（2-3个变体方向建议）和 workflow_note。\n"
 
     if not is_first_batch and not is_last_batch:
-        header += "\n本批次只需输出 shots 数组，不需要 metadata/variants/workflow_note。\n"
+        header += "\n本批次只需输出 shots 数组，不需要 metadata/character_sheets/variants/workflow_note。\n"
 
     header += dedent("""\
 
@@ -318,12 +392,14 @@ def build_batch_user_prompt(
           "duration_seconds": 4,
           "narrative_function": "hook",
           "attention_level": 5,
-          "prompt": "完整的 Seedance 提示词",
+          "prompt": "完整的 Seedance 视频提示词",
+          "first_frame_prompt": "完整的首帧图提示词或空字符串",
+          "first_frame_required": boolean,
+          "character_refs": ["char_A"],
           "asset_hints": ["素材建议"],
           "original_segments": [{"start": 0, "end": 4}],
           "style_anchor": "写实真人/3D渲染/动画/etc",
-          "subject_description_summary": "人物外貌摘要",
-          "first_frame_prompt": "首帧图提示词或空字符串"
+          "subject_description_summary": "人物外貌摘要"
         }
       ]
     }
@@ -459,9 +535,12 @@ def generate_shot_prompts(
             all_shots.extend(batch_shots)
             print(f"[shot_prompt_generator] 第 {bi} 批完成，生成 {len(batch_shots)} 个 shots")
 
-            # 从第一批提取 metadata
-            if is_first and "metadata" in batch_result:
-                result["metadata"] = batch_result["metadata"]
+            # 从第一批提取 metadata 和 character_sheets
+            if is_first:
+                if "metadata" in batch_result:
+                    result["metadata"] = batch_result["metadata"]
+                if "character_sheets" in batch_result:
+                    result["character_sheets"] = batch_result["character_sheets"]
 
             # 从最后一批提取 variants 和 workflow_note
             if is_last:
@@ -512,7 +591,29 @@ def render_shot_prompts_md(shot_prompts: dict) -> str:
             lines.append(f"- {r}")
         lines.append("")
 
-    lines += ["---", "", "## 分镜提示词", ""]
+    # 角色参考图
+    characters = shot_prompts.get("character_sheets", [])
+    if characters:
+        lines += ["## 🎭 角色参考图", ""]
+        for char in characters:
+            char_id = char.get("id", "?")
+            char_name = char.get("name", "?")
+            char_role = char.get("role", "")
+            appears = char.get("appears_in_shots", [])
+            lines += [
+                f"### {char_name}  `{char_id}`  {char_role}  出现于 Shot {', '.join(str(s) for s in appears)}",
+                "",
+                "```",
+                char.get("prompt", ""),
+                "```",
+                "",
+            ]
+            if char.get("visual_tags"):
+                lines.append(f"> 🏷️ 视觉标签：{', '.join(char['visual_tags'])}")
+                lines.append("")
+        lines += ["---", ""]
+
+    lines += ["## 🎬 分镜提示词", ""]
 
     for shot in shot_prompts.get("shots", []):
         lines += [
@@ -523,6 +624,24 @@ def render_shot_prompts_md(shot_prompts: dict) -> str:
             "```",
             "",
         ]
+        # 首帧图 prompt
+        ffp = shot.get("first_frame_prompt", "")
+        if ffp:
+            lines += [
+                "**🖼️ 首帧图 Prompt：**",
+                "",
+                "```",
+                ffp,
+                "```",
+                "",
+            ]
+
+        # 角色引用
+        char_refs = shot.get("character_refs", [])
+        if char_refs:
+            lines.append(f"> 👤 角色引用：{', '.join(char_refs)}")
+            lines.append("")
+
         if shot.get("asset_hints"):
             for hint in shot["asset_hints"]:
                 lines.append(f"> 💡 {hint}")
