@@ -104,7 +104,7 @@ def call_llm(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        max_tokens=12000,
+        max_tokens=32000,
         temperature=0.7,
     )
     return response.choices[0].message.content
@@ -290,9 +290,19 @@ def parse_llm_response(response_text: str) -> dict:
                 break
 
     if json_end is None:
-        raise ValueError("JSON 对象不完整")
+        raise ValueError(
+            "JSON 对象不完整（很可能是 LLM 输出被 max_tokens 截断）。"
+            f"原始响应长度: {len(response_text)} 字符"
+        )
 
-    return json.loads(text[json_start:json_end])
+    result = json.loads(text[json_start:json_end])
+
+    # 检查是否只解析到了部分内容（截断后恰好闭合的情况）
+    shot_count = len(result.get("shots", []))
+    if shot_count <= 1 and json_end < len(text) - 50:
+        print(f"⚠️ 警告：只解析到 {shot_count} 个 shot，但响应文本在 JSON 之后还有 {len(text) - json_end} 字符，可能存在截断问题")
+
+    return result
 
 
 # ─── 主入口（兼容原有调用方式）────────────────────────────────────────────────
