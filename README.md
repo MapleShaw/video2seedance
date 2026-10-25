@@ -10,10 +10,13 @@
 
 输入一条参考视频，输出结构化分析（`analysis.json`）、可直接粘贴到 Seedance 的 A/B/C 三版提示词（`prompts.md`），以及一个可离线打开的交互式可视化报告（`report.html`）。
 
+![案例总览](docs/images/case-overview.png)
+
 ---
 
 ## 目录
 
+- [效果预览](#效果预览)
 - [解决什么问题](#解决什么问题)
 - [工作流程](#工作流程)
 - [环境准备](#环境准备)
@@ -26,6 +29,19 @@
 - [测试](#测试)
 - [核心定位](#核心定位)
 - [致谢](#致谢)
+
+---
+
+## 效果预览
+
+**案例总览**（`output/index.html`）：按批次汇总所有 case，可按状态筛选、搜索，卡片上显示片长、镜头数、Prompt 与对账状态。
+
+**单个 case 报告**（`output/<case>/report.html`）：
+
+| 概览与监看台 | 节奏仪表盘与节拍拆解 | A/B/C 生成 Prompt |
+|:---:|:---:|:---:|
+| ![概览与监看台](docs/images/report-monitor.png) | ![节奏仪表盘与节拍拆解](docs/images/report-timeline.png) | ![A/B/C 生成 Prompt](docs/images/report-prompts.png) |
+| 实测片长、镜头、运动量与钩子摘要；播放器与当前节拍联动 | 切点、节拍、注意力、运动、响度共用时间轴，悬停预览画面 | 分版本展示人物参考图与视频 Prompt，每段一键复制 |
 
 ---
 
@@ -233,6 +249,7 @@ python report_builder.py --index ../output                       # 只刷新总�
 .
 ├── SKILL.md                     # Agent Skill 定义（分析规范与三种路径说明）
 ├── requirements.txt
+├── docs/images/                 # README 截图
 ├── examples/                    # 示例输出（analysis.json / 报告样例）
 ├── src/
 │   ├── gemini_video_case_analyzer.py  # 一键全流程入口
