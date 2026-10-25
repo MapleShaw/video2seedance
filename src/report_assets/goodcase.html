@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case Lab · Good Case 灵感库</title>
+<style>
+/*{{CSS}}*/
+.gc-nav { display: flex; gap: 8px; flex-wrap: wrap; position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 10px 0; border-bottom: 1px solid var(--line); }
+.gc-nav a { font-size: 12.5px; color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; text-decoration: none; }
+.gc-nav a:hover { color: var(--ink); border-color: var(--ink-3); }
+.gc-group { margin: 30px 0; scroll-margin-top: 60px; }
+.gc-group > header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.gc-group h2 { margin: 0; font: 600 20px var(--serif); }
+.gc-group .play { font-size: 12.5px; color: var(--accent); }
+.gc-group .upd { font: 11px var(--mono); color: var(--ink-3); margin-left: auto; }
+.gc-tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 10px; }
+.gc-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.gc-notes .panel { padding: 12px 14px; font-size: 13px; color: var(--ink-2); line-height: 1.65; }
+.gc-notes h4 { margin: 0 0 6px; font-size: 12px; color: var(--ink-3); letter-spacing: .04em; }
+.gc-notes ul { margin: 0; padding-left: 18px; }
+.gc-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+.gc-item { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.gc-item video { width: 100%; background: #000; display: block; max-height: 520px; }
+.gc-item .meta { display: flex; gap: 8px; align-items: center; padding: 10px 12px 0; font: 11px var(--mono); color: var(--ink-3); flex-wrap: wrap; }
+.gc-item .meta b { color: var(--ink); font: 600 13px var(--serif); margin-right: auto; }
+.gc-item .dup { color: var(--accent); }
+.gc-item pre { margin: 8px 12px 12px; white-space: pre-wrap; font-size: 12.5px; line-height: 1.65; color: var(--ink-2); max-height: 180px; overflow: hidden; position: relative; }
+.gc-item pre.open { max-height: none; }
+.gc-item .acts { display: flex; gap: 8px; padding: 0 12px 12px; margin-top: auto; }
+@media (max-width: 760px) { .gc-notes { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<main class="page">
+  <header class="idx-head">
+    <div>
+      <div class="hero-kicker"><a href="index.html">← Case Lab 案例总览</a></div>
+      <h1>Good Case 灵感库</h1>
+      <p class="dim">已生成的好作品 + 对应 Prompt，按玩法归类，用来延展新玩法。</p>
+    </div>
+    <div class="tools"><button class="btn ghost" id="btnTheme" title="切换明暗">◑</button></div>
+  </header>
+  <nav class="gc-nav" id="nav"></nav>
+  <div id="groups"></div>
+</main>
+<script id="data" type="application/json">{{DATA}}</script>
+<script>
+(() => {
+  const DATA = JSON.parse(document.getElementById('data').textContent);
+  const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
+  const $ = (s) => document.querySelector(s);
+
+  const saved = localStorage.getItem('vca-theme');
+  if (saved) document.documentElement.dataset.theme = saved;
+  $('#btnTheme').onclick = () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('vca-theme', next);
+  };
+
+  const items = [];
+  $('#nav').innerHTML = DATA.groups.map((g) => `<a href="#g-${esc(g.id)}">${esc(g.title)} · ${g.items.length}</a>`).join('');
+  $('#groups').innerHTML = DATA.groups.map((g) => `
+    <section class="gc-group" id="g-${esc(g.id)}">
+      <header><h2>${esc(g.title)}</h2><span class="play">${esc(g.playstyle)}</span><span class="upd">最近更新 ${esc(g.updated_at)}</span></header>
+      ${g.tags && g.tags.length ? `<div class="gc-tags">${g.tags.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</div>` : ''}
+      ${g.why || (g.extend && g.extend.length) ? `<div class="gc-notes">
+        ${g.why ? `<div class="panel"><h4>为什么好</h4>${esc(g.why)}</div>` : ''}
+        ${g.extend && g.extend.length ? `<div class="panel"><h4>可延展方向</h4><ul>${g.extend.map((e) => `<li>${esc(e)}</li>`).join('')}</ul></div>` : ''}
+      </div>` : ''}
+      <div class="gc-items">${g.items.map((it) => { items.push(it); const i = items.length - 1; return `
+        <div class="panel gc-item">
+          ${it.video ? `<video src="${esc(it.video)}" controls preload="metadata" playsinline></video>` : ''}
+          <div class="meta"><b>${esc(it.label)}</b>${it.aspect ? `<span>${esc(it.aspect)}</span>` : ''}${it.duration ? `<span>${it.duration}s</span>` : ''}<span>${it.chars} 字</span>${it.updated_at ? `<span>更新于 ${esc(it.updated_at)}</span>` : ''}</div>
+          ${it.dup_of ? `<div class="meta"><span class="dup">视频文件与 ${esc(it.dup_of)} 完全相同，可能放错了</span></div>` : ''}
+          ${it.prompt ? `<pre data-i="${i}">${esc(it.prompt)}</pre>
+          <div class="acts"><button class="btn ghost" data-expand="${i}">展开</button><button class="btn primary" data-copy="${i}">复制 Prompt</button></div>` : '<div class="meta">缺少同名 .md Prompt</div>'}
+        </div>`; }).join('')}</div>
+    </section>`).join('');
+
+  document.addEventListener('click', (e) => {
+    const c = e.target.closest('[data-copy]');
+    if (c) {
+      navigator.clipboard.writeText(items[Number(c.dataset.copy)].prompt).then(() => {
+        const t = c.textContent; c.textContent = '已复制'; setTimeout(() => { c.textContent = t; }, 1200);
+      });
+    }
+    const x = e.target.closest('[data-expand]');
+    if (x) {
+      const pre = document.querySelector(`pre[data-i="${x.dataset.expand}"]`);
+      pre.classList.toggle('open');
+      x.textContent = pre.classList.contains('open') ? '收起' : '展开';
+    }
+  });
+  // only one video plays at a time
+  document.addEventListener('play', (e) => document.querySelectorAll('video').forEach((v) => { if (v !== e.target) v.pause(); }), true);
+})();
+</script>
+</body>
+</html>

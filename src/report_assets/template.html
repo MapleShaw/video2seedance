@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}} · 拆解报告</title>
+<style>
+/*{{CSS}}*/
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="../index.html" title="返回案例总览">
+      <span class="brand-mark">◐</span><span>Case Lab</span>
+    </a>
+    <nav class="toc" id="toc"></nav>
+    <div class="top-actions">
+      <span class="check-pill" id="checkPill"></span>
+      <button class="btn ghost" id="btnTheme" title="切换明暗 (T)">◑</button>
+      <button class="btn ghost" id="btnKeys" title="快捷键 (?)">⌘</button>
+      <button class="btn" id="btnExport" title="导出 analysis + 实测数据">导出 JSON</button>
+    </div>
+  </div>
+</header>
+
+<main class="page" id="app">
+  <section class="hero" id="sec-hero"></section>
+
+  <section class="block" id="sec-monitor">
+    <div class="block-head">
+      <h2><span class="idx">01</span>监看台</h2>
+      <p class="sub">播放时节拍、轨道与表格同步；点轨道任意位置跳转，拖动可擦洗</p>
+    </div>
+    <div class="monitor">
+      <div class="player-wrap" id="playerWrap">
+        <video id="player" preload="metadata" playsinline></video>
+        <div class="player-empty" id="playerEmpty">
+          <p>未关联原视频</p>
+          <label class="btn">选择本地视频<input type="file" accept="video/*" id="pickVideo" hidden></label>
+        </div>
+        <div class="player-bar">
+          <button class="btn icon" id="btnPlay" title="播放/暂停 (空格)">▶</button>
+          <span class="tc" id="tcNow">00:00.00</span><span class="tc dim">/</span><span class="tc dim" id="tcTotal">00:00.00</span>
+          <span class="spacer"></span>
+          <select id="rate" title="播放速度">
+            <option value="0.25">0.25×</option><option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option>
+          </select>
+          <button class="btn icon" id="btnLoop" title="循环当前节拍 (R)">⟲</button>
+          <button class="btn icon" id="btnPip" title="画中画 (P)">⧉</button>
+        </div>
+      </div>
+      <aside class="inspector" id="inspector"></aside>
+    </div>
+    <div class="tracks" id="tracks">
+      <div class="tracks-legend" id="tracksLegend"></div>
+      <div class="tracks-canvas" id="tracksCanvas"></div>
+      <div class="scrub-tip" id="scrubTip" hidden></div>
+    </div>
+  </section>
+
+  <section class="block" id="sec-beats">
+    <div class="block-head">
+      <h2><span class="idx">02</span>节拍拆解</h2>
+      <div class="tools">
+        <div class="chips" id="fnFilter"></div>
+        <input class="search" id="search" type="search" placeholder="搜索画面、动作、运镜、声音…  /">
+        <div class="seg" id="viewToggle">
+          <button data-view="list" class="on" title="列表视图">≣</button>
+          <button data-view="cards" title="卡片视图">▦</button>
+        </div>
+      </div>
+    </div>
+    <div class="beats" id="beats"></div>
+  </section>
+
+  <section class="block" id="sec-why"></section>
+  <section class="block" id="sec-visual"></section>
+  <section class="block" id="sec-camera"></section>
+  <section class="block" id="sec-transfer"></section>
+  <section class="block" id="sec-seedance"></section>
+  <section class="block" id="sec-prompts"></section>
+  <section class="block" id="sec-checks"></section>
+
+  <footer class="foot" id="foot"></footer>
+</main>
+
+<div class="lightbox" id="lightbox" hidden>
+  <button class="lb-close" id="lbClose" title="关闭 (Esc)">×</button>
+  <button class="lb-nav prev" id="lbPrev">‹</button>
+  <figure><img id="lbImg" alt=""><figcaption id="lbCap"></figcaption></figure>
+  <button class="lb-nav next" id="lbNext">›</button>
+</div>
+
+<div class="keys" id="keys" hidden>
+  <div class="keys-card">
+    <h3>快捷键</h3>
+    <dl>
+      <dt>Space</dt><dd>播放 / 暂停</dd>
+      <dt>← →</dt><dd>上一个 / 下一个节拍</dd>
+      <dt>J L</dt><dd>后退 / 前进 1 秒</dd>
+      <dt>, .</dt><dd>逐帧后退 / 前进</dd>
+      <dt>R</dt><dd>循环当前节拍</dd>
+      <dt>P</dt><dd>画中画</dd>
+      <dt>/</dt><dd>搜索节拍</dd>
+      <dt>1 2 3</dt><dd>切换 Prompt 版本</dd>
+      <dt>T</dt><dd>明暗主题</dd>
+      <dt>Esc</dt><dd>关闭弹层</dd>
+    </dl>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script id="doc" type="application/json">{{DOC}}</script>
+<script>
+/*{{JS}}*/
+</script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case Lab · 案例总览</title>
+<style>
+/*{{CSS}}*/
+.idx-stats { display: flex; gap: 28px; flex-wrap: wrap; }
+.idx-stats div { display: flex; flex-direction: column; gap: 2px; }
+.idx-stats b { font: 600 26px/1 var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+.idx-stats span { font-size: 11px; color: var(--ink-3); letter-spacing: .04em; }
+.idx-stats .accent b { color: var(--accent); }
+.idx-tools { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.idx-tools select { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: 13px; }
+.idx-tools .search { min-width: 220px; }
+.chips button .n { font-family: var(--mono); opacity: .6; margin-left: 4px; }
+.batch { margin: 26px 0 12px; display: flex; align-items: baseline; gap: 12px; }
+.batch h2 { margin: 0; font: 600 20px var(--mono); letter-spacing: .02em; }
+.batch .meta { font-size: 12px; color: var(--ink-3); }
+.batch .new { font: 700 10px var(--mono); padding: 2px 7px; border-radius: 3px; background: var(--accent); color: #1a1205; letter-spacing: .08em; }
+.batch .line { flex: 1; height: 1px; background: var(--line); align-self: center; }
+.case-card .cover { transition: background-image .15s; }
+.case-card .cover .prog { position: absolute; left: 8px; right: 8px; bottom: 30px; display: flex; gap: 3px; opacity: 0; transition: opacity .2s; }
+.case-card:hover .cover .prog { opacity: 1; }
+.case-card .cover .prog i { flex: 1; height: 2px; border-radius: 2px; background: rgba(255,255,255,.35); }
+.case-card .cover .prog i.on { background: #fff; }
+.case-card .cover .newdot { position: absolute; top: 8px; right: 8px; font: 700 10px var(--mono); padding: 3px 6px; border-radius: 3px; background: var(--accent); color: #1a1205; letter-spacing: .06em; }
+.case-card .status-row { display: flex; gap: 6px; flex-wrap: wrap; font: 11px var(--mono); }
+.case-card .st { padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-3); }
+.case-card .st.ok { color: var(--good); border-color: currentColor; }
+.case-card .st.warn { color: var(--accent); border-color: currentColor; }
+.case-card .st.bad { color: #ff6b6b; border-color: currentColor; }
+.idx-grid mark { background: color-mix(in srgb, var(--accent) 35%, transparent); color: inherit; border-radius: 2px; }
+.kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; color: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<main class="page">
+  <header class="idx-head">
+    <div>
+      <div class="hero-kicker">Case Lab · Video Case Analyzer</div>
+      <h1>案例总览</h1>
+    </div>
+    <div class="idx-stats" id="stats"></div>
+    <div class="tools">
+      <a class="btn ghost" id="goodLink" href="goodcase.html" hidden>Good Case 灵感库 →</a>
+      <button class="btn ghost" id="btnTheme" title="切换明暗">◑</button>
+    </div>
+  </header>
+  <div class="idx-tools">
+    <div class="chips" id="filters"></div>
+    <span class="spacer"></span>
+    <select id="sort" aria-label="排序">
+      <option value="new">最新在前</option>
+      <option value="old">最早在前</option>
+      <option value="updated">最近更新在前</option>
+      <option value="dur">时长从长到短</option>
+      <option value="title">标题 A→Z</option>
+    </select>
+    <input class="search" id="q" type="search" placeholder="搜索标题、钩子、关键词…  /">
+    <span class="chip" id="count"></span>
+  </div>
+  <div id="grid"></div>
+  <footer class="foot" id="foot"></footer>
+</main>
+<script id="cases" type="application/json">{{CASES}}</script>
+<script>
+(() => {
+  const DATA = JSON.parse(document.getElementById('cases').textContent);
+  const CASES = DATA.cases;
+  if (DATA.goodcase) { const g = document.getElementById('goodLink'); g.hidden = false; g.textContent = `Good Case 灵感库 · ${DATA.goodcase} →`; }
+  const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
+  const $ = (s) => document.querySelector(s);
+
+  const saved = localStorage.getItem('vca-theme');
+  if (saved) document.documentElement.dataset.theme = saved;
+  $('#btnTheme').onclick = () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('vca-theme', next);
+  };
+
+  // Persisted view state
+  const S = Object.assign({ filter: 'all', sort: 'new', q: '' }, JSON.parse(localStorage.getItem('vca-index') || '{}'));
+  const persist = () => localStorage.setItem('vca-index', JSON.stringify(S));
+
+  const latestBatch = CASES.reduce((m, c) => (c.batch > m ? c.batch : m), '');
+  const fmtBatch = (b) => (b && b.length === 4 ? `${b.slice(0, 2)}-${b.slice(2)}` : b || '—');
+
+  const FILTERS = [
+    ['all', '全部', () => true],
+    ['new', '最新一批', (c) => c.batch === latestBatch],
+    ['pub', '已发布', (c) => c.status === 'pub'],
+    ['wip', '进行中', (c) => !c.status],
+    ['abc', 'A/B/C Prompt', (c) => c.prompt_kind === 'abc'],
+    ['warn', '有对账提示', (c) => c.checks && (c.checks.warn || c.checks.fail)],
+    ['del', '已弃用', (c) => c.status === 'del'],
+  ];
+  const textOf = (c) => [c.id, c.title, c.one_sentence, c.hook, ...(c.keywords || [])].join(' ').toLowerCase();
+  const hl = (s) => {
+    const t = esc(s);
+    if (!S.q) return t;
+    const re = new RegExp(S.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    return t.replace(re, (m) => `<mark>${m}</mark>`);
+  };
+
+  const SORTS = {
+    new: (a, b) => (b.batch.localeCompare(a.batch)) || (a.seq - b.seq) || (a.mtime - b.mtime),
+    updated: (a, b) => (b.updated_ts || 0) - (a.updated_ts || 0),
+    old: (a, b) => (a.batch.localeCompare(b.batch)) || (a.seq - b.seq) || (a.mtime - b.mtime),
+    dur: (a, b) => (b.duration || 0) - (a.duration || 0),
+    title: (a, b) => a.title.localeCompare(b.title, 'zh'),
+  };
+
+  function stats() {
+    const n = (f) => CASES.filter(f).length;
+    $('#stats').innerHTML = [
+      ['accent', fmtBatch(latestBatch), '最新批次'],
+      ['', CASES.length, '案例总数'],
+      ['', n((c) => c.status === 'pub'), '已发布'],
+      ['', n((c) => c.prompt_kind === 'abc'), 'A/B/C Prompt'],
+    ].map(([cls, v, l]) => `<div class="${cls}"><b>${esc(v)}</b><span>${l}</span></div>`).join('');
+  }
+
+  function statusRow(c) {
+    const out = [];
+    if (c.prompt_kind === 'abc') out.push('<span class="st ok">A/B/C Prompt</span>');
+    else if (c.prompt_kind === 'legacy') out.push('<span class="st">旧版 Prompt</span>');
+    else out.push('<span class="st">无 Prompt</span>');
+    const k = c.checks || {};
+    if (k.fail) out.push(`<span class="st bad">${k.fail} 未过</span>`);
+    else if (k.warn) out.push(`<span class="st warn">${k.warn} 提示</span>`);
+    else if (k.pass) out.push(`<span class="st ok">对账 ${k.pass}/${k.pass + (k.skip || 0)}</span>`);
+    return out.join('');
+  }
+
+  function card(c, i) {
+    const tag = c.report ? 'a' : 'div';
+    const thumbs = c.thumbs && c.thumbs.length ? c.thumbs : (c.cover ? [c.cover] : []);
+    return `<${tag} class="panel case-card ${c.report ? '' : 'no-report'}" ${c.report ? `href="${esc(c.report)}"` : 'title="尚未生成报告"'}
+        data-thumbs="${esc(JSON.stringify(thumbs))}" style="animation-delay:${Math.min(i, 16) * 25}ms">
+      <div class="cover" style="${thumbs[0] ? `background-image:url('${esc(thumbs[0])}')` : ''}">
+        ${c.status ? `<span class="badge ${c.status}">${c.status.toUpperCase()}</span>` : ''}
+        ${c.batch === latestBatch && S.sort !== 'new' && S.sort !== 'old' ? '<span class="newdot">NEW</span>' : ''}
+        ${thumbs.length > 1 ? `<div class="prog">${thumbs.map((_, j) => `<i class="${j ? '' : 'on'}"></i>`).join('')}</div>` : ''}
+        ${c.duration ? `<span class="dur">${Number(c.duration).toFixed(1)}s</span>` : ''}
+      </div>
+      <div class="body">
+        <span class="cid">${hl(c.id)}${c.aspect ? ` · ${esc(c.aspect)}` : ''}${c.shots ? ` · ${c.shots} 镜` : ''}</span>
+        <h3>${hl(c.title)}</h3>
+        <p>${hl(c.one_sentence)}</p>
+        <div class="status-row">${statusRow(c)}</div>
+        ${c.updated_at ? `<span class="cid updated" title="分析或 Prompt 的最近修改时间">最近更新 ${esc(c.updated_at)}</span>` : ''}
+        <div class="foot-row">${(c.keywords || []).map((k) => `<span class="chip">${hl(k)}</span>`).join('')}</div>
+      </div>
+    </${tag}>`;
+  }
+
+  function render() {
+    const fn = (FILTERS.find((f) => f[0] === S.filter) || FILTERS[0])[2];
+    $('#filters').innerHTML = FILTERS.map(([k, l, f]) =>
+      `<button data-f="${k}" class="${S.filter === k ? 'on' : ''}">${l}<span class="n">${CASES.filter(f).length}</span></button>`).join('');
+    document.querySelectorAll('#filters button').forEach((b) => (b.onclick = () => { S.filter = b.dataset.f; persist(); render(); }));
+    $('#sort').value = S.sort;
+
+    const rows = CASES.filter((c) => fn(c) && (!S.q || textOf(c).includes(S.q))).sort(SORTS[S.sort]);
+    $('#count').textContent = `${rows.length} / ${CASES.length}`;
+    if (!rows.length) { $('#grid').innerHTML = '<div class="empty-note">没有匹配的案例</div>'; return; }
+
+    let i = 0;
+    if (S.sort === 'new' || S.sort === 'old') {
+      const groups = [];
+      rows.forEach((c) => {
+        const g = groups[groups.length - 1];
+        if (g && g.batch === c.batch) g.items.push(c); else groups.push({ batch: c.batch, items: [c] });
+      });
+      $('#grid').innerHTML = groups.map((g) => `
+        <div class="batch"><h2>${fmtBatch(g.batch)}</h2>${g.batch === latestBatch ? '<span class="new">NEW</span>' : ''}
+          <span class="meta">${g.items.length} 个案例</span><span class="line"></span></div>
+        <div class="idx-grid">${g.items.map((c) => card(c, i++)).join('')}</div>`).join('');
+    } else {
+      $('#grid').innerHTML = `<div class="idx-grid" style="margin-top:18px">${rows.map((c) => card(c, i++)).join('')}</div>`;
+    }
+  }
+
+  // Hover: cycle through beat keyframes
+  let timer = null;
+  document.addEventListener('mouseover', (e) => {
+    const el = e.target.closest('.case-card');
+    if (!el || el.dataset.cycling) return;
+    const thumbs = JSON.parse(el.dataset.thumbs || '[]');
+    if (thumbs.length < 2) return;
+    thumbs.forEach((t) => { new Image().src = t; });
+    el.dataset.cycling = '1';
+    let k = 0;
+    const cover = el.querySelector('.cover');
+    const bars = el.querySelectorAll('.prog i');
+    const step = () => {
+      k = (k + 1) % thumbs.length;
+      cover.style.backgroundImage = `url('${thumbs[k]}')`;
+      bars.forEach((b, j) => b.classList.toggle('on', j === k));
+    };
+    clearInterval(timer);
+    timer = setInterval(step, 650);
+    el.addEventListener('mouseleave', () => {
+      clearInterval(timer);
+      delete el.dataset.cycling;
+      cover.style.backgroundImage = `url('${thumbs[0]}')`;
+      bars.forEach((b, j) => b.classList.toggle('on', j === 0));
+    }, { once: true });
+  });
+
+  $('#sort').onchange = (e) => { S.sort = e.target.value; persist(); render(); };
+  const qEl = $('#q');
+  qEl.value = S.q;
+  qEl.addEventListener('input', (e) => { S.q = e.target.value.trim().toLowerCase(); persist(); render(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && document.activeElement !== qEl) { e.preventDefault(); qEl.focus(); }
+    if (e.key === 'Escape' && document.activeElement === qEl) { qEl.value = ''; S.q = ''; persist(); render(); qEl.blur(); }
+  });
+
+  $('#foot').innerHTML = `<span>生成于 ${esc(DATA.generated_at)} · <span class="kbd">/</span> 搜索 · 悬停卡片预览节拍关键帧</span><span>python src/report_builder.py --all output 重新生成全部报告</span>`;
+  stats();
+  render();
+})();
+</script>
+</body>
+</html>
