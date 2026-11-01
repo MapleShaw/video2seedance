@@ -6,10 +6,11 @@ __pycache__/
 .cache/
 
 # 生成产物、案例与视频资源（不提交）
-output/
-downloads/
-goodcase/
+/output/
+/downloads/
+/goodcase/
 *.mp4
 *.mov
 *.webm
 *.m4a
+!examples/output/**/report_assets/proxy.mp4

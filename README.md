@@ -43,6 +43,28 @@
 | ![概览与监看台](docs/images/report-monitor.png) | ![节奏仪表盘与节拍拆解](docs/images/report-timeline.png) | ![A/B/C 生成 Prompt](docs/images/report-prompts.png) |
 | 实测片长、镜头、运动量与钩子摘要；播放器与当前节拍联动 | 切点、节拍、注意力、运动、响度共用时间轴，悬停预览画面 | 分版本展示人物参考图与视频 Prompt，每段一键复制 |
 
+### 内置示例：无需 API Key 即可查看效果
+
+仓库自带一个完整的示例 case `0808_001_pub`（暖金双人近吻三镜），包含分析结果、A/B/C 提示词和可交互报告，克隆后直接打开即可：
+
+```bash
+git clone https://github.com/MapleShaw/video2seedance.git
+cd video2seedance
+open examples/output/index.html                     # 案例总览页
+open examples/output/0808_001_pub/report.html       # 单个 case 报告
+```
+
+> Windows 用 `start`，Linux 用 `xdg-open`；也可以在文件管理器里直接双击。示例只附带 720p 播放代理（约 1MB），不含原视频。
+
+| 示例文件 | 说明 |
+|------|------|
+| [`examples/output/index.html`](examples/output/index.html) | 案例总览页 |
+| [`examples/output/0808_001_pub/report.html`](examples/output/0808_001_pub/report.html) | 交互式可视化报告 |
+| [`examples/output/0808_001_pub/analysis.json`](examples/output/0808_001_pub/analysis.json) | 第 ① 步的结构化分析 |
+| [`examples/output/0808_001_pub/prompts.md`](examples/output/0808_001_pub/prompts.md) | 第 ② 步的 A/B/C 提示词 |
+
+你自己运行后生成的 `output/` 目录结构与示例完全一致。
+
 ---
 
 ## 解决什么问题
@@ -239,7 +261,7 @@ python report_builder.py --index ../output                       # 只刷新总�
 | `measure.json` | ffmpeg 实测缓存（机器生成，勿手改；`--force` 强制重测） |
 | `frames/`、`report_assets/` | 关键帧、胶片条、HEVC/4K 源的 720p 播放代理 |
 
-> `output/`、`downloads/`、`goodcase/` 与所有视频文件均已加入 `.gitignore`，仓库只包含代码与文档。克隆后按上述步骤运行即可在本地得到同样的报告。
+> 根目录的 `output/`、`downloads/`、`goodcase/` 与视频文件均已加入 `.gitignore`，不会提交；仓库只附带 `examples/output/` 一个示例。克隆后按上述步骤运行即可在本地得到同样的报告。
 
 ---
 
@@ -250,7 +272,8 @@ python report_builder.py --index ../output                       # 只刷新总�
 ├── SKILL.md                     # Agent Skill 定义（分析规范与三种路径说明）
 ├── requirements.txt
 ├── docs/images/                 # README 截图
-├── examples/                    # 示例输出（analysis.json / 报告样例）
+├── examples/
+│   └── output/                  # 内置示例：index.html + 0808_001_pub 完整报告
 ├── src/
 │   ├── gemini_video_case_analyzer.py  # 一键全流程入口
 │   ├── video_downloader.py      # 分享链接 → 本地视频

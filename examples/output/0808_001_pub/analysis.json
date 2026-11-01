@@ -1,0 +1,209 @@
+{
+  "meta": {
+    "title": "暖金双人近吻三镜",
+    "duration_seconds": 8.07,
+    "aspect_ratio": "16:9",
+    "estimated_shot_count": 3,
+    "pace": "slow",
+    "primary_format": "short-film",
+    "analysis_source": "agent-vision (ffmpeg 抽帧 + 3fps 密帧复盘 + 对话内读图分析)",
+    "source_file": "downloads/0808/001.mp4",
+    "resolution": "2560x1440",
+    "fps": 30,
+    "audio": "stereo AAC, mean -16.9 dB; 0-4.5s 低频稀疏垫乐后在约5s贴脸镜明显抬升"
+  },
+  "summary": {
+    "one_sentence": "横屏电影机浅景深下，年轻女子与戴眼镜的男子在暖金室内近距离对视，先贴脸特写、再切到奶油色吊带裙拥抱、再切回额贴额近吻，用三镜把亲密张力拉满。",
+    "core_appeal": "极近的双人脸部空气感 + 暖金轮廓光 + 中段身体拥抱的景别落差 + 结尾额贴额几乎要吻上的停顿。",
+    "likely_intent": "言情短剧/影视混剪式浪漫名场面，强调对视、距离和服装质感，而不是叙事说明。"
+  },
+  "timeline": [
+    {
+      "start": 0,
+      "end": 2.27,
+      "visual_event": "双人侧脸贴得很近，暖金轮廓光下对视，几乎要吻上",
+      "subject_description": "年轻女子在画面右侧，深棕长发梳向脑后，精致眼线与柔粉唇，金叶纹耳钉加灰色水滴珍珠耳坠，细金项链；年轻男子在左侧侧脸，深色短发，细金属框眼镜，白衬衫领隐约可见。",
+      "subject_action": "女生主动逼近，先看眼再看唇再抬眼带笑，把脸送进男生空间；男生几乎不动，只回看。不是两人僵住对视。",
+      "camera_action": "电影机固定近特写，浅景深，机位几乎不动，只有极轻微呼吸感。",
+      "camera_details": "双人面部大特写，横屏16:9，女子三分之二侧、男子正侧脸，背景完全虚化。",
+      "lighting_description": "暖金侧逆光/轮廓光，女子面部受光更亮，男子半边脸偏暗，中间一道暖高光。",
+      "environment_description": "室内夜间或低照度空间，背景只剩暖色虚光斑，具体家具不可辨。",
+      "audio_event": "低频稀疏垫乐淡入，约每秒一次轻脉冲；未见可确认对白内容。",
+      "narrative_function": "hook",
+      "attention_level": 5,
+      "color_tone": "暖金肤色 + 深暗背景 + 金属耳饰高光",
+      "scene_continuity": "起始场景",
+      "transition_type": "硬切",
+      "transition_detail": "约2.27s场景检测确认硬切，从双人脸特写切到躯干中近景"
+    },
+    {
+      "start": 2.27,
+      "end": 5.3,
+      "visual_event": "切到女子上半身，她抬臂环向男子肩颈，奶油色吊带裙与珍珠细节入画",
+      "subject_description": "同一女子，奶油/米白吊带裙，鸡心领、胸前有褶皱抽褶，细肩带上有小珠饰，后背中线有一排白色珍珠扣；深棕波浪长发披在右肩，细金项链仍在。男子只剩左侧白衬衫肩臂入画。",
+      "subject_action": "切到上围两三秒，女生继续前倾，呼吸带起裙身，双臂从身侧抬起准备勾脖子，展示胸衣式剪裁和身材曲线；男生肩臂几乎不动。",
+      "camera_action": "固定中近景，焦点落在裙身与肩线，男子衬衫前景略虚。",
+      "camera_details": "胸腰中近景，女子头顶部被裁切或刚入画，横屏浅景深。",
+      "lighting_description": "同暖金侧光，皮肤与裙料有柔高光，背景继续虚成暖斑。",
+      "environment_description": "同一暗室内，仍无法辨认具体陈设。",
+      "audio_event": "垫乐持续，约4.5-5.0s高频能量短暂回落，为下一镜抬升做准备。",
+      "narrative_function": "build",
+      "attention_level": 4,
+      "color_tone": "米白裙 + 暖肤色 + 暗金背景",
+      "scene_continuity": "同场景换景别",
+      "transition_type": "硬切",
+      "transition_detail": "约5.3s从躯干拥抱再切回贴脸；密帧显示5.0s仍是裙身拥抱，5.33s已是额贴额特写"
+    },
+    {
+      "start": 5.3,
+      "end": 8.07,
+      "visual_event": "回到双人贴脸，额几乎相抵，男子手臂虚化在前景环住她",
+      "subject_description": "同一对男女。女子深发、金叶珍珠耳坠、细链、柔笑或认真对视；男子细框眼镜、深发，多以侧后影出现。前景可见男子手臂环在她肩颈附近。",
+      "subject_action": "女生双手勾住男生后颈并轻轻拉近，两人对视，将吻未吻；男生不主动扑上去，只是被带近。",
+      "camera_action": "电影机固定面部大特写，浅景深，前景手臂虚化，机位基本锁死。",
+      "camera_details": "双人面部大特写，横屏，男子偏左前景，女子居中偏右。",
+      "lighting_description": "更强的暖金轮廓光打在女子颧骨、耳饰和男子发丝/镜框上。",
+      "environment_description": "背景仍是暖色虚化光斑，无新场景。",
+      "audio_event": "约5s后声轨明显抬升为宽带高潮，像浪漫配乐涌起或气声/衣料声叠进，持续到结尾。",
+      "narrative_function": "payoff",
+      "attention_level": 5,
+      "color_tone": "暖金高光 + 暗背景 + 耳饰金属闪点",
+      "scene_continuity": "同场景换回脸部景别",
+      "transition_type": "无(收尾段)",
+      "transition_detail": "在贴脸停顿中结束，未见淡出黑场"
+    }
+  ],
+  "visual_language": {
+    "style_keywords": ["言情近吻", "暖金轮廓光", "浅景深", "双人贴脸", "电影机", "奶油色吊带裙", "横屏短剧"],
+    "palette": ["暖金", "深棕发", "米白裙", "白衬衫", "暗背景", "金属金/灰珍珠"],
+    "lighting": ["暖金侧逆光", "轮廓光", "低照度室内", "面部柔高光", "男子半脸偏暗"],
+    "texture_fx": ["极浅景深虚化", "皮肤电影柔光", "耳饰金属高光", "裙料褶皱与珍珠扣", "前景手臂虚化"],
+    "environment_traits": ["暗室内", "背景只剩暖色光斑", "无清晰家具", "夜间或低照度"],
+    "subject_design_traits": ["年轻女子", "精致短剧女主脸", "深棕长发", "金叶纹+水滴珍珠耳坠", "细金项链", "奶油色鸡心领胸衣式吊带裙", "上围饱满腰肢纤细", "珍珠肩带与后背珍珠扣", "年轻男子", "细金属框眼镜", "白衬衫"],
+    "realism_level": "photorealistic",
+    "realism_level_evidence": [
+      "皮肤、发丝、镜框和珍珠耳坠有真实高光与材质分离",
+      "浅景深和暖金布光是电影机/影视灯光，不是手机自拍",
+      "衣料褶皱、珍珠扣和衬衫领口连续出现，不是CG塑料感"
+    ],
+    "global_style_direction": "横屏电影机言情近吻：暖金轮廓光、极浅景深、双人空气感，用脸-身体-脸三镜把亲密距离做满。",
+    "production_look": "影视剧/短剧电影机拍摄，专业布光与浅景深，不是手机,不是自拍,不是手持跟拍",
+    "skin_texture": "电影胶片柔光，高光轻微晕开，细微胶片颗粒，边缘不锐；不是8K超清AI脸，也不是手机美颜颗粒",
+    "camera_equipment_feel": "电影机/大光圈定焦，固定机位微呼吸，横屏16:9，浅景深，前景偶尔虚化"
+  },
+  "rhythm_structure": {
+    "hook_window": "0-2秒贴脸对视立刻建立亲密钩子。",
+    "peak_moments": [
+      { "time": 2.27, "reason": "硬切到拥抱躯干，景别突然打开，服装与动作信息涌入。" },
+      { "time": 5.3, "reason": "切回额贴额，配乐抬升，近吻停顿到最紧。" }
+    ],
+    "pattern": "三镜情绪递进：脸部空气感 → 身体拥抱 → 更近的额贴额。",
+    "intensity_curve": "贴脸钩子(高) → 拥抱展开(中高) → 额贴额高潮(最高) 后停在将吻未吻。"
+  },
+  "camera_language": {
+    "shot_types": ["双人面部大特写", "上半身中近景", "额贴额大特写"],
+    "movement_patterns": ["固定机位", "极浅景深", "硬切换景别", "前景虚化遮挡"],
+    "dominant_movement": "固定机位。两处硬切换景别，镜头本身几乎不摇不移不跟拍。",
+    "movement_continuity": "同一对人物、同一暖金暗室，靠硬切在脸与躯干之间跳，不是一镜推拉。",
+    "framing_traits": ["双人极近构图", "女子更受光、更完整", "男子常以侧脸/肩臂陪体", "背景彻底虚化"],
+    "continuity_strategy": "同一对角色+同一光色+同一空间，用三次景别跳切维持亲密，不换场。"
+  },
+  "audio_visual_sync": {
+    "music_genre": "浪漫影视垫乐，前半稀疏低频，后半涌起",
+    "beat_impact_on_visuals": "前半对视几乎静止，后半贴脸镜与声轨抬升同步。",
+    "character_rhythm_sync": "无舞蹈、无卡点律动；动作是缓慢对视与拥抱。",
+    "environment_music_elements": "可能有极轻呼吸/衣料声，原片未见可确认对白。",
+    "recommended_bgm_reference": "未核实到2026-08当期抖音站内热歌，不冒充实时热门。风格对标言情短剧近吻混剪常用的钢琴+弦乐涌起，而不是具体曲名。",
+    "recommended_bgm_style": "浪漫钢琴+轻弦乐，BPM 68-80，前4秒只留稀疏低音和零星钢琴，约第5秒随贴脸镜涌起弦乐；不要歌词、不要电子舞曲。",
+    "recommended_bpm": "68-80",
+    "music_sync_plan": "开场贴脸用极轻垫乐；中段拥抱保持克制；切回额贴额时音乐抬升并在将吻未吻处悬住。"
+  },
+  "emotion_and_psychology": {
+    "dominant_emotion": "亲密、克制、将吻未吻的紧张",
+    "emotion_curve": "对视钩子 → 拥抱确认关系 → 额贴额把距离收到最小。",
+    "viewer_pull_factors": ["极近双人空气感", "服装与耳饰的贵气细节", "硬切景别落差", "不把吻做完的留白"],
+    "why_it_feels_premium": ["电影机浅景深", "暖金轮廓光", "耳饰与珍珠扣的材质真实", "男子眼镜/衬衫形成稳定陪体"]
+  },
+  "viral_mechanics": {
+    "hook_type": "开场即贴脸对视的亲密名场面",
+    "retention_drivers": ["想看会不会吻上", "中段切到身体拥抱", "结尾更近的额贴额"],
+    "shareability_drivers": ["可当言情混剪素材", "妆造和光色高级", "将吻未吻适合截图"],
+    "repeat_watch_drivers": ["耳坠与珍珠扣细节", "两人眼神", "三镜如何跳切"]
+  },
+  "transferable_pattern": {
+    "must_keep": [
+      "横屏16:9电影机浅景深",
+      "暖金轮廓光与暗背景",
+      "双人极近对视",
+      "脸特写-躯干拥抱-脸特写的三镜结构",
+      "将吻未吻的停顿，不把吻做满",
+      "女子吊带裙+标志性耳坠，男子白衬衫+眼镜作为稳定陪体"
+    ],
+    "replaceable": ["具体五官", "裙色与耳饰款式", "是否戴眼镜", "具体室内陈设", "BGM曲目"],
+    "do_not_copy_literally": ["可识别真人演员面孔", "原片具体耳饰品牌造型", "把未发生的接吻补写成完成"],
+    "abstract_pattern": "用电影机把一对男女锁在暖金暗室里，先用贴脸对视抓住人，再切到拥抱给身体信息，最后切回更近的额贴额，停在将吻未吻。"
+  },
+  "seedance_translation": {
+    "recommended_mode": "first_frame_plus_text",
+    "why": "必须锁定同一对男女的脸、眼镜、耳坠和奶油色裙子；文本控制三镜硬切和将吻未吻，避免模型自己补完整接吻或改成手机自拍。",
+    "seedance_ready_prompt_template": "横屏16:9电影机浅景深，暖金轮廓光暗室内。年轻女子穿奶油色吊带裙、金叶珍珠耳坠，年轻男子白衬衫细框眼镜。Shot01双人贴脸对视；Shot02硬切上半身拥抱；Shot03硬切额贴额将吻未吻。固定机位，实时速度，不说话。",
+    "shot_plan_needed": true,
+    "reference_asset_suggestion": [
+      "女子人物参考图（奶油色吊带裙+耳坠，横屏半身）",
+      "男子人物参考图（白衬衫+细框眼镜，横屏半身）",
+      "可选同色温暗室内空镜作场景参考"
+    ],
+    "risk_points": [
+      "模型容易把电影机生成成手机自拍或抖音美颜，必须锁死电影机/浅景深/专业布光",
+      "容易把将吻未吻做成完成接吻，或补写不存在的对白",
+      "双人一致性差，男子眼镜和白衬衫必须每镜锁定",
+      "中段硬切容易被理解成运镜推拉，必须写成硬切换景别",
+      "吊带裙只通过整体穿搭呈现，不做身体局部怼拍",
+      "不要无噪点影棚广告感，但也不要手机颗粒；保持电影柔光"
+    ]
+  },
+  "next_step_assets": {
+    "script_needed": false,
+    "storyboard_needed": false,
+    "first_frame_prompt_needed": true,
+    "variants": [
+      {
+        "name": "直发浅银裙",
+        "direction": "同一暖金三镜近吻结构，只换女子直发、淡妆和浅银裙。",
+        "what_changes": ["黑色直发", "更淡的妆", "浅银白裙与银耳饰"],
+        "what_stays": ["16:9电影机", "暖金暗室", "三镜脸-身-脸", "将吻未吻", "男子白衬衫眼镜"]
+      },
+      {
+        "name": "红裙晚宴版",
+        "direction": "同一机位与三镜，只换女子晚宴红裙与耳饰。",
+        "what_changes": ["红裙", "更重的晚宴耳饰", "唇色更深"],
+        "what_stays": ["暖金室内", "双人贴脸", "硬切三镜"]
+      }
+    ]
+  },
+  "characters_detected": [
+    {
+      "id": "girl_01",
+      "first_seen_at": 0,
+      "last_seen_at": 8.07,
+      "appearance_count": 3,
+      "brief_description": "年轻女子，奶油色吊带裙，近吻主角",
+      "distinguishing_features": ["深棕长发", "金叶纹+水滴珍珠耳坠", "细金项链", "奶油色鸡心领吊带裙", "珍珠肩带与后背珍珠扣"],
+      "state_changes": "从贴脸对视到抬臂拥抱，再回到额贴额。全程同一套奶油色吊带裙、同一耳坠，没有变装、没有换妆。脸特写和躯干镜只是景别不同，不是两套造型。"
+    },
+    {
+      "id": "guy_01",
+      "first_seen_at": 0,
+      "last_seen_at": 8.07,
+      "appearance_count": 3,
+      "brief_description": "年轻男子，白衬衫细框眼镜，近吻陪体",
+      "distinguishing_features": ["深色短发", "细金属框眼镜", "白衬衫"],
+      "state_changes": "多为侧脸或肩臂入画，第三镜手臂环住女子肩颈。全程同一白衬衫、同一副细框眼镜，没有变装。"
+    }
+  ],
+  "generation_constraints": {
+    "costume_change": false,
+    "character_prompts_array": "do_not_use",
+    "character_sheet_policy": "分别为 girl_01 和 guy_01 各出一张横屏16:9人物参考图；男子是第二个独立角色，不是女子的第二套装扮。禁止把脸特写和躯干镜理解成两套造型。"
+  }
+}
